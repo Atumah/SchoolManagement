@@ -14,22 +14,6 @@ jobs:
   quality-checks:
     name: Basic Quality Checks
     runs-on: ubuntu-latest
-    
-    services:
-      mariadb:
-        image: mariadb:11.4
-        env:
-          MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: app
-          MARIADB_USER: app
-          MARIADB_PASSWORD: secret
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mariadb-admin ping -h localhost"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -39,7 +23,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: pdo, pdo_mysql, intl
+          extensions: pdo, intl
           coverage: none
 
       - name: Cache Composer dependencies
