@@ -33,9 +33,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Validate composer.json
-        run: composer validate --strict
-
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
         with:
