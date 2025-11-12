@@ -40,7 +40,7 @@ Professional-ready PHP 8.2 application that bundles a Docker-based dev stack, Ma
 | Service    | Image                     | Ports        | Notes                                                              |
 |------------|---------------------------|--------------|--------------------------------------------------------------------|
 | app        | php:8.2-apache            | 49200 → 80   | mounts the repo, loads custom `php.ini`, logs frontend URL         |
-| db         | mariadb:11.4              | 49202 → 3306 | seeded via runtime migrator, credentials from `.env`               |
+| db         | mariadb:11.4              | 3307 → 3306 | seeded via runtime migrator, credentials from `.env`               |
 | phpmyadmin | phpmyadmin/phpmyadmin:5.2 | 49201 → 80   | web UI for MariaDB; startup logs print the management console URL  |
 
 ### Environment Variables
