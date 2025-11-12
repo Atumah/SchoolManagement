@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /courses/join.php');
         exit;
     }
-    
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'join') {
             // Ensure only students can join courses
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: /courses/join.php');
                 exit;
             }
-            
+
             $courseId = (int)$_POST['course_id'];
             if (joinCourse($courseId, $currentUser['id'])) {
                 setFlashMessage('success', 'Successfully joined course');
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: /courses/join.php');
                 exit;
             }
-            
+
             $courseId = (int)$_POST['course_id'];
             if (leaveCourse($courseId, $currentUser['id'])) {
                 setFlashMessage('success', 'Successfully left course');
@@ -65,7 +65,7 @@ $userCourseIds = array_column($userCourses, 'id');
 $csrfToken = generateCSRFToken();
 $search = $_GET['search'] ?? '';
 if ($search) {
-    $allCourses = array_filter($allCourses, function($course) use ($search) {
+    $allCourses = array_filter($allCourses, function ($course) use ($search) {
         return stripos($course['name'], $search) !== false ||
                stripos($course['description'], $search) !== false;
     });
@@ -89,7 +89,7 @@ if ($search) {
             <h1>Join Course</h1>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
@@ -108,13 +108,13 @@ if ($search) {
         </div>
         
         <!-- Courses List -->
-        <?php if (empty($allCourses)): ?>
+        <?php if (empty($allCourses)) : ?>
             <div class="empty-state">
                 <p>No courses available.</p>
             </div>
-        <?php else: ?>
+        <?php else : ?>
             <div style="display: grid; gap: 1.5rem;">
-                <?php foreach ($allCourses as $course): ?>
+                <?php foreach ($allCourses as $course) : ?>
                     <?php
                     $teacher = getUserById($course['teacher_id']);
                     $enrolledCount = count($course['students']);
@@ -125,11 +125,11 @@ if ($search) {
                         <div class="course-card-header">
                             <h2><?= htmlspecialchars($course['name']) ?></h2>
                             <div>
-                                <?php if ($isEnrolled): ?>
+                                <?php if ($isEnrolled) : ?>
                                     <span class="badge badge-success">Already Joined</span>
-                                <?php elseif ($isFull): ?>
+                                <?php elseif ($isFull) : ?>
                                     <span class="badge badge-danger">Full</span>
-                                <?php else: ?>
+                                <?php else : ?>
                                     <span class="badge badge-info">Available</span>
                                 <?php endif; ?>
                             </div>
@@ -142,16 +142,16 @@ if ($search) {
                         </div>
                         
                         <div style="margin-top: 1rem;">
-                            <?php if ($isEnrolled): ?>
+                            <?php if ($isEnrolled) : ?>
                                 <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to leave this course?');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="action" value="leave">
                                     <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
                                     <button type="submit" class="btn btn-danger">Leave Course</button>
                                 </form>
-                            <?php elseif ($isFull): ?>
+                            <?php elseif ($isFull) : ?>
                                 <button class="btn btn-secondary" disabled>Course Full</button>
-                            <?php else: ?>
+                            <?php else : ?>
                                 <form method="POST" action="" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="action" value="join">

@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /progress/progress.php');
         exit;
     }
-    
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
             $teacherId = $currentUser['id'];
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notes = $_POST['notes'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
             $status = $_POST['status'] ?? 'Stable';
-            
+
             if (empty($notes)) {
                 setFlashMessage('error', 'Progress notes are required');
             } else {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notes = $_POST['notes'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
             $status = $_POST['status'] ?? 'Stable';
-            
+
             if (empty($notes)) {
                 setFlashMessage('error', 'Progress notes are required');
             } else {
@@ -110,7 +110,7 @@ if ($filterStatus) {
     $progressEntries = array_filter($progressEntries, fn($p) => $p['status'] === $filterStatus);
 }
 if ($search) {
-    $progressEntries = array_filter($progressEntries, function($p) use ($search) {
+    $progressEntries = array_filter($progressEntries, function ($p) use ($search) {
         return stripos($p['notes'], $search) !== false;
     });
 }
@@ -138,7 +138,7 @@ $csrfToken = generateCSRFToken();
             <button class="form-toggle-btn" onclick="showAddForm()">+ Add Progress</button>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
@@ -151,7 +151,7 @@ $csrfToken = generateCSRFToken();
                     <label for="filter_student">Filter by Student</label>
                     <select id="filter_student" name="filter_student">
                         <option value="">All Students</option>
-                        <?php foreach ($allStudents as $student): ?>
+                        <?php foreach ($allStudents as $student) : ?>
                             <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
@@ -162,7 +162,7 @@ $csrfToken = generateCSRFToken();
                     <label for="filter_course">Filter by Course</label>
                     <select id="filter_course" name="filter_course">
                         <option value="">All Courses</option>
-                        <?php foreach ($teacherCourses as $course): ?>
+                        <?php foreach ($teacherCourses as $course) : ?>
                             <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
@@ -194,14 +194,14 @@ $csrfToken = generateCSRFToken();
             <form method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="action" value="<?= $editingProgress ? 'edit' : 'add' ?>">
-                <?php if ($editingProgress): ?>
+                <?php if ($editingProgress) : ?>
                     <input type="hidden" name="id" value="<?= $editingProgress['id'] ?>">
                 <?php endif; ?>
                 <div class="form-group">
                     <label for="student_id">Student</label>
                     <select id="student_id" name="student_id" required>
                         <option value="">Select Student</option>
-                        <?php foreach ($allStudents as $student): ?>
+                        <?php foreach ($allStudents as $student) : ?>
                             <option value="<?= $student['id'] ?>" <?= $editingProgress && $editingProgress['student_id'] == $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
@@ -212,7 +212,7 @@ $csrfToken = generateCSRFToken();
                     <label for="course_id">Course</label>
                     <select id="course_id" name="course_id" required>
                         <option value="">Select Course</option>
-                        <?php foreach ($teacherCourses as $course): ?>
+                        <?php foreach ($teacherCourses as $course) : ?>
                             <option value="<?= $course['id'] ?>" <?= $editingProgress && $editingProgress['course_id'] == $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
@@ -243,11 +243,11 @@ $csrfToken = generateCSRFToken();
         
         <!-- Progress Table -->
         <div class="table-container">
-            <?php if (empty($progressEntries)): ?>
+            <?php if (empty($progressEntries)) : ?>
                 <div class="empty-state">
                     <p>No progress entries found.</p>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <table>
                     <thead>
                         <tr>
@@ -260,7 +260,7 @@ $csrfToken = generateCSRFToken();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($progressEntries as $progress): ?>
+                        <?php foreach ($progressEntries as $progress) : ?>
                             <?php
                             $student = getUserById($progress['student_id']);
                             $course = getCourseById($progress['course_id']);
@@ -306,7 +306,7 @@ $csrfToken = generateCSRFToken();
         window.location.href = '/progress/progress.php';
     }
     
-    <?php if ($editingProgress): ?>
+    <?php if ($editingProgress) : ?>
     showAddForm();
     <?php endif; ?>
     </script>

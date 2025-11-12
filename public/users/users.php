@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /users/users.php');
         exit;
     }
-    
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
             $firstName = trim($_POST['first_name'] ?? '');
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_POST['email'] ?? '';
             $role = $_POST['role'] ?? '';
             $status = $_POST['status'] ?? 'Active';
-            
+
             if (empty($firstName) || empty($lastName) || empty($password) || empty($email) || empty($role)) {
                 setFlashMessage('error', 'Please fill in all required fields');
             } elseif ($password !== $confirmPassword) {
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $status = $_POST['status'] ?? 'Active';
                 $password = $_POST['password'] ?? '';
                 $confirmPassword = $_POST['confirm_password'] ?? '';
-                
+
                 if (empty($firstName) || empty($lastName) || empty($email) || empty($role)) {
                     setFlashMessage('error', 'Please fill in all required fields');
                 } elseif (!empty($password) && $password !== $confirmPassword) {
@@ -121,7 +121,7 @@ if ($filterStatus) {
     $users = array_filter($users, fn($u) => $u['status'] === $filterStatus);
 }
 if ($search) {
-    $users = array_filter($users, function($u) use ($search) {
+    $users = array_filter($users, function ($u) use ($search) {
         return stripos($u['username'], $search) !== false ||
                stripos($u['name'], $search) !== false ||
                stripos($u['email'], $search) !== false;
@@ -151,7 +151,7 @@ $csrfToken = generateCSRFToken();
             <button class="form-toggle-btn" onclick="openAddUserModal()">+ Add User</button>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
@@ -190,11 +190,11 @@ $csrfToken = generateCSRFToken();
         
         <!-- Users Table -->
         <div class="table-container">
-            <?php if (empty($users)): ?>
+            <?php if (empty($users)) : ?>
                 <div class="empty-state">
                     <p>No users found.</p>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <table>
                     <thead>
                         <tr>
@@ -207,7 +207,7 @@ $csrfToken = generateCSRFToken();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($users as $user): ?>
+                        <?php foreach ($users as $user) : ?>
                             <tr>
                                 <td><?= htmlspecialchars($user['username']) ?></td>
                                 <td><?= htmlspecialchars($user['name']) ?></td>
@@ -223,14 +223,14 @@ $csrfToken = generateCSRFToken();
                                 <td>
                                     <div class="actions">
                                         <button type="button" class="btn btn-secondary btn-small edit-user-btn" data-user='<?= htmlspecialchars(json_encode($user), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
-                                        <?php if ($user['id'] !== $currentUser['id']): ?>
+                                        <?php if ($user['id'] !== $currentUser['id']) : ?>
                                             <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="<?= $user['id'] ?>">
                                                 <button type="submit" class="btn btn-danger btn-small">Delete</button>
                                             </form>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <button class="btn btn-secondary btn-small" disabled>Delete</button>
                                         <?php endif; ?>
                                     </div>
@@ -462,7 +462,7 @@ $csrfToken = generateCSRFToken();
         }
     });
     
-    <?php if ($editingUser): ?>
+    <?php if ($editingUser) : ?>
     // Auto-open edit modal if editing from URL
     document.addEventListener('DOMContentLoaded', function() {
         const userData = <?= json_encode($editingUser, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;

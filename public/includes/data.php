@@ -43,7 +43,8 @@ function getUserById(int $id, bool $forceFresh = false): ?array
 {
     // Check session first for updated user data (keep this for performance)
     // Skip session cache if forceFresh is true
-    if (!$forceFresh
+    if (
+        !$forceFresh
         && session_status() === PHP_SESSION_ACTIVE
         && isset($_SESSION['user'])
         && isset($_SESSION['user']['id'])
@@ -51,7 +52,7 @@ function getUserById(int $id, bool $forceFresh = false): ?array
     ) {
         return $_SESSION['user'];
     }
-    
+
     try {
         $stmt = getDb()->prepare('SELECT * FROM users WHERE id = ?');
         $stmt->execute([$id]);
@@ -104,28 +105,28 @@ function addUser(array $userData): int
     if (!isset($userData['email']) || !filter_var($userData['email'], FILTER_VALIDATE_EMAIL)) {
         throw new InvalidArgumentException('Invalid email format');
     }
-    
+
     // Validate password: at least 6 characters and contains at least one number
     if (!isset($userData['password']) || strlen($userData['password']) < 6 || !preg_match('/[0-9]/', $userData['password'])) {
         throw new InvalidArgumentException('Password must be at least 6 characters and contain at least one number');
     }
-    
+
     // Generate username from email if not provided
     $username = $userData['username'] ?? null;
     if (!$username && isset($userData['email'])) {
         $username = explode('@', $userData['email'])[0];
     }
-    
+
     // Generate name from first_name and last_name if not provided
     $name = $userData['name'] ?? null;
     if (!$name && isset($userData['first_name']) && isset($userData['last_name'])) {
         $name = trim($userData['first_name'] . ' ' . $userData['last_name']);
     }
-    
+
     try {
         // Hash password with bcrypt
         $hashedPassword = password_hash($userData['password'], PASSWORD_BCRYPT);
-        
+
         $stmt = getDb()->prepare('
             INSERT INTO users (username, password, email, name, first_name, last_name, role, status, twofa_secret, twofa_enabled)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -156,7 +157,7 @@ function updateUser(int $id, array $userData): bool
 {
     $fields = [];
     $values = [];
-    
+
     if (isset($userData['name'])) {
         $fields[] = 'name = ?';
         $values[] = $userData['name'];
@@ -209,24 +210,24 @@ function updateUser(int $id, array $userData): bool
         $fields[] = 'twofa_last_used_timestep = ?';
         $values[] = $userData['twofa_last_used_timestep'] !== null ? (int)$userData['twofa_last_used_timestep'] : null;
     }
-    
+
     if (empty($fields)) {
         return false;
     }
-    
+
     $values[] = $id;
-    
+
     try {
         $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?';
-        
+
         // Log the SQL and values for debugging
         error_log('updateUser SQL: ' . $sql);
         error_log('updateUser Values: ' . print_r($values, true));
         error_log('updateUser Fields count: ' . count($fields) . ', Values count: ' . count($values));
-        
+
         $stmt = getDb()->prepare($sql);
         $result = $stmt->execute($values);
-        
+
         // Check for errors
         if (!$result) {
             $errorInfo = $stmt->errorInfo();
@@ -235,15 +236,15 @@ function updateUser(int $id, array $userData): bool
             error_log('Database error in updateUser - Error: ' . print_r($errorInfo, true));
             return false;
         }
-        
+
         // Log successful update
         error_log('updateUser executed successfully. Rows affected: ' . $stmt->rowCount());
-        
+
         // Update session if this is the current user (force fresh fetch to get updated data)
         if ($result && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_id']) && $_SESSION['user_id'] === $id) {
             $_SESSION['user'] = getUserById($id, true);
         }
-        
+
         return $result;
     } catch (\PDOException $e) {
         error_log('Database exception in updateUser: ' . $e->getMessage());
@@ -279,13 +280,13 @@ function getAllCourses(): array
     try {
         $stmt = getDb()->query('SELECT * FROM courses ORDER BY id ASC');
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         // Populate students array for each course
         foreach ($courses as &$course) {
             $course['students'] = array_column(getCourseStudents($course['id']), 'id');
         }
         unset($course);
-        
+
         return $courses;
     } catch (PDOException $e) {
         error_log('Database error in getAllCourses: ' . $e->getMessage());
@@ -302,12 +303,12 @@ function getCourseById(int $id): ?array
         $stmt = getDb()->prepare('SELECT * FROM courses WHERE id = ?');
         $stmt->execute([$id]);
         $course = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($course) {
             // Populate students array
             $course['students'] = array_column(getCourseStudents($id), 'id');
         }
-        
+
         return $course ?: null;
     } catch (PDOException $e) {
         error_log('Database error in getCourseById: ' . $e->getMessage());
@@ -324,13 +325,13 @@ function getCoursesByTeacher(int $teacherId): array
         $stmt = getDb()->prepare('SELECT * FROM courses WHERE teacher_id = ? ORDER BY id ASC');
         $stmt->execute([$teacherId]);
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         // Populate students array for each course
         foreach ($courses as &$course) {
             $course['students'] = array_column(getCourseStudents($course['id']), 'id');
         }
         unset($course);
-        
+
         return $courses;
     } catch (PDOException $e) {
         error_log('Database error in getCoursesByTeacher: ' . $e->getMessage());
@@ -352,13 +353,13 @@ function getCoursesByStudent(int $studentId): array
         ');
         $stmt->execute([$studentId]);
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         // Populate students array for each course
         foreach ($courses as &$course) {
             $course['students'] = array_column(getCourseStudents($course['id']), 'id');
         }
         unset($course);
-        
+
         return $courses;
     } catch (PDOException $e) {
         error_log('Database error in getCoursesByStudent: ' . $e->getMessage());
@@ -440,28 +441,28 @@ function joinCourse(int $courseId, int $userId): bool
         if (!$user || $user['role'] !== 'Student') {
             return false; // Only students can join courses
         }
-        
+
         // Check if already enrolled
         $checkStmt = getDb()->prepare('SELECT id FROM course_students WHERE course_id = ? AND student_id = ?');
         $checkStmt->execute([$courseId, $userId]);
         if ($checkStmt->fetch()) {
             return false; // Already enrolled
         }
-        
+
         // Check if course is full
         $course = getCourseById($courseId);
         if (!$course) {
             return false;
         }
-        
+
         $countStmt = getDb()->prepare('SELECT COUNT(*) as count FROM course_students WHERE course_id = ?');
         $countStmt->execute([$courseId]);
         $count = $countStmt->fetch(PDO::FETCH_ASSOC)['count'];
-        
+
         if ($count >= $course['max_students']) {
             return false; // Course is full
         }
-        
+
         // Enroll student
         $stmt = getDb()->prepare('INSERT INTO course_students (course_id, student_id) VALUES (?, ?)');
         return $stmt->execute([$courseId, $userId]);

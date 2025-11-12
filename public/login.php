@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
-        
+
         // Validate email format
         if (empty($email) || empty($password)) {
             $error = 'Please enter both email and password';
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 header('Location: /login-2fa.php');
                 exit;
             }
-            
+
             // No 2FA required, proceed to dashboard
             $redirect = getRedirectAfterLogin();
             header('Location: ' . $redirect);
@@ -69,12 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
         $email = trim($_POST['email'] ?? '');
-        
+
         // Validate all fields are filled
         if (empty($firstName) || empty($lastName) || empty($password) || empty($email)) {
             $error = 'Please fill in all required fields';
             $activePanel = 'signup';
-        } 
+        }
         // Validate email format
         elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address';
@@ -144,11 +144,11 @@ $csrfToken = generateCSRFToken();
                             <p>Sign in to continue to Morning Star</p>
                         </div>
                         
-                        <?php if ($error && $activePanel === 'login'): ?>
+                        <?php if ($error && $activePanel === 'login') : ?>
                             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
                         
-                        <?php if ($success): ?>
+                        <?php if ($success) : ?>
                             <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                         <?php endif; ?>
                         
@@ -192,7 +192,7 @@ $csrfToken = generateCSRFToken();
                             <p>Join Morning Star School today</p>
                         </div>
                         
-                        <?php if ($error && $activePanel === 'signup'): ?>
+                        <?php if ($error && $activePanel === 'signup') : ?>
                             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
                         

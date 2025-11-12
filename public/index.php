@@ -44,14 +44,14 @@ if ($currentUser['role'] === 'Teacher') {
             <h1>Welcome, <?= htmlspecialchars($currentUser['name']) ?></h1>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
         
         <div class="dashboard-grid">
-            <?php if ($currentUser['role'] === 'Teacher'): ?>
+            <?php if ($currentUser['role'] === 'Teacher') : ?>
                 <div class="stat-card">
                     <div class="stat-icon">📚</div>
                     <div class="stat-content">
@@ -80,7 +80,7 @@ if ($currentUser['role'] === 'Teacher') {
                         <p>Notes</p>
                     </div>
                 </div>
-            <?php elseif ($currentUser['role'] === 'Admin'): ?>
+            <?php elseif ($currentUser['role'] === 'Admin') : ?>
                 <div class="stat-card">
                     <div class="stat-icon">👥</div>
                     <div class="stat-content">
@@ -101,7 +101,7 @@ if ($currentUser['role'] === 'Teacher') {
         <div class="card">
             <h2>Quick Actions</h2>
             <div class="quick-actions">
-                <?php if ($currentUser['role'] === 'Teacher'): ?>
+                <?php if ($currentUser['role'] === 'Teacher') : ?>
                     <a href="/grades/view.php" class="action-btn">
                         <span class="action-icon">📊</span>
                         <span>Manage Grades</span>
@@ -118,7 +118,7 @@ if ($currentUser['role'] === 'Teacher') {
                         <span class="action-icon">📝</span>
                         <span>Take Notes</span>
                     </a>
-                <?php elseif ($currentUser['role'] === 'Admin'): ?>
+                <?php elseif ($currentUser['role'] === 'Admin') : ?>
                     <a href="/users/users.php" class="action-btn">
                         <span class="action-icon">👥</span>
                         <span>Manage Users</span>

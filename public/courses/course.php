@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /courses/course.php');
         exit;
     }
-    
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
             if (hasAnyRole(['Admin', 'Teacher'])) {
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $teacherId = (int)$_POST['teacher_id'];
                 $schedule = $_POST['schedule'] ?? '';
                 $maxStudents = (int)($_POST['max_students'] ?? 30);
-                
+
                 if (empty($name) || empty($teacherId)) {
                     setFlashMessage('error', 'Course name and teacher are required');
                 } else {
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $teacherId = (int)$_POST['teacher_id'];
                 $schedule = $_POST['schedule'] ?? '';
                 $maxStudents = (int)$_POST['max_students'];
-                
+
                 if ($maxStudents < count($course['students'])) {
                     setFlashMessage('error', 'Cannot reduce max students below current enrollment');
                 } else {
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = (int)$_POST['course_id'];
             $studentId = (int)$_POST['student_id'];
             $course = getCourseById($courseId);
-            
+
             if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
                 if (joinCourse($courseId, $studentId)) {
                     setFlashMessage('success', 'Student added to course successfully');
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = (int)$_POST['course_id'];
             $studentId = (int)$_POST['student_id'];
             $course = getCourseById($courseId);
-            
+
             if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
                 if (leaveCourse($courseId, $studentId)) {
                     setFlashMessage('success', 'Student removed from course successfully');
@@ -260,18 +260,18 @@ $csrfToken = generateCSRFToken();
         <?php include __DIR__ . '/../includes/back-button.php'; ?>
         <div class="page-header">
             <h1>Courses</h1>
-            <?php if (hasAnyRole(['Admin', 'Teacher']) && !$viewingCourse): ?>
+            <?php if (hasAnyRole(['Admin', 'Teacher']) && !$viewingCourse) : ?>
                 <button type="button" class="form-toggle-btn" onclick="openAddCourseModal()">+ Add Course</button>
             <?php endif; ?>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
         
-        <?php if ($viewingCourse): ?>
+        <?php if ($viewingCourse) : ?>
             <!-- Course Detail View -->
             <div class="course-detail-container">
                 <div class="course-info">
@@ -292,7 +292,7 @@ $csrfToken = generateCSRFToken();
                         <span class="info-label">Enrollment:</span>
                         <span class="info-value"><?= count($viewingCourse['students']) ?> / <?= $viewingCourse['max_students'] ?></span>
                     </div>
-                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']): ?>
+                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
                         <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
                             <button type="button" class="btn btn-secondary edit-course-btn" 
                                     style="height: 38px; display: inline-flex; align-items: center;"
@@ -309,16 +309,16 @@ $csrfToken = generateCSRFToken();
                 
                 <div class="students-section">
                     <h3>Enrolled Students</h3>
-                    <?php if (empty($viewingCourse['students'])): ?>
+                    <?php if (empty($viewingCourse['students'])) : ?>
                         <p style="color: var(--text-muted);">No students enrolled yet.</p>
-                    <?php else: ?>
+                    <?php else : ?>
                         <ul class="student-list">
-                            <?php foreach ($viewingCourse['students'] as $studentId): ?>
+                            <?php foreach ($viewingCourse['students'] as $studentId) : ?>
                                 <?php $student = getUserById($studentId); ?>
-                                <?php if ($student): ?>
+                                <?php if ($student) : ?>
                                     <li class="student-item">
                                         <span><?= htmlspecialchars($student['name']) ?></span>
-                                        <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']): ?>
+                                        <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
                                             <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Remove this student from the course?');">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="action" value="remove_student">
@@ -333,18 +333,18 @@ $csrfToken = generateCSRFToken();
                         </ul>
                     <?php endif; ?>
                     
-                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']): ?>
-                        <?php 
+                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
+                        <?php
                         $enrolledStudentIds = $viewingCourse['students'];
                         $availableStudents = array_filter($students, fn($s) => !in_array($s['id'], $enrolledStudentIds));
                         ?>
-                        <?php if (count($viewingCourse['students']) < $viewingCourse['max_students'] && !empty($availableStudents)): ?>
+                        <?php if (count($viewingCourse['students']) < $viewingCourse['max_students'] && !empty($availableStudents)) : ?>
                             <div class="add-student-form">
                                 <button type="button" class="btn btn-primary" onclick="openAddStudentModal(<?= $viewingCourse['id'] ?>, <?= htmlspecialchars(json_encode($availableStudents), ENT_QUOTES, 'UTF-8') ?>)">+ Add Student</button>
                             </div>
-                        <?php elseif (count($viewingCourse['students']) >= $viewingCourse['max_students']): ?>
+                        <?php elseif (count($viewingCourse['students']) >= $viewingCourse['max_students']) : ?>
                             <p style="color: var(--text-muted); margin-top: 1rem;">Course is full (<?= $viewingCourse['max_students'] ?> students).</p>
-                        <?php elseif (empty($availableStudents)): ?>
+                        <?php elseif (empty($availableStudents)) : ?>
                             <p style="color: var(--text-muted); margin-top: 1rem;">All students are already enrolled.</p>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -354,7 +354,7 @@ $csrfToken = generateCSRFToken();
             <div style="margin-top: 2rem;">
                 <a href="/courses/course.php" class="btn btn-secondary">Back to Courses List</a>
             </div>
-        <?php else: ?>
+        <?php else : ?>
             <!-- Courses List View -->
             <!-- Filters -->
         <div class="filters">
@@ -363,7 +363,7 @@ $csrfToken = generateCSRFToken();
                     <label for="filter_teacher">Filter by Teacher</label>
                     <select id="filter_teacher" name="filter_teacher">
                         <option value="">All Teachers</option>
-                        <?php foreach ($teachers as $teacher): ?>
+                        <?php foreach ($teachers as $teacher) : ?>
                             <option value="<?= $teacher['id'] ?>" <?= $filterTeacher == $teacher['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($teacher['name']) ?>
                             </option>
@@ -382,11 +382,11 @@ $csrfToken = generateCSRFToken();
         
         <!-- Courses Table -->
         <div class="table-container">
-            <?php if (empty($courses)): ?>
+            <?php if (empty($courses)) : ?>
                 <div class="empty-state">
                     <p>No courses found.</p>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <table>
                     <thead>
                         <tr>
@@ -398,7 +398,7 @@ $csrfToken = generateCSRFToken();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($courses as $course): ?>
+                        <?php foreach ($courses as $course) : ?>
                             <?php
                             $teacher = getUserById($course['teacher_id']);
                             $enrolledCount = count($course['students']);
@@ -412,7 +412,7 @@ $csrfToken = generateCSRFToken();
                                 <td><?= htmlspecialchars($course['schedule']) ?></td>
                                 <td>
                                     <div class="actions" onclick="event.stopPropagation();">
-                                        <?php if (hasRole('Admin') || $course['teacher_id'] == $currentUser['id']): ?>
+                                        <?php if (hasRole('Admin') || $course['teacher_id'] == $currentUser['id']) : ?>
                                             <button type="button" class="btn btn-secondary btn-small edit-course-btn" 
                                                     data-course='<?= htmlspecialchars(json_encode($course), ENT_QUOTES, 'UTF-8') ?>'
                                                     onclick="event.stopPropagation();">Edit</button>
@@ -435,7 +435,7 @@ $csrfToken = generateCSRFToken();
     </main>
     
     <!-- Edit Course Modal -->
-    <?php if (hasAnyRole(['Admin', 'Teacher'])): ?>
+    <?php if (hasAnyRole(['Admin', 'Teacher'])) : ?>
     <div class="modal-overlay" id="editCourseModal" onclick="closeEditModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
             <div class="modal-header">
@@ -459,7 +459,7 @@ $csrfToken = generateCSRFToken();
                         <label for="edit_teacher_id">Teacher</label>
                         <select id="edit_teacher_id" name="teacher_id" required>
                             <option value="">Select Teacher</option>
-                            <?php foreach ($teachers as $teacher): ?>
+                            <?php foreach ($teachers as $teacher) : ?>
                                 <option value="<?= $teacher['id'] ?>"><?= htmlspecialchars($teacher['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -504,7 +504,7 @@ $csrfToken = generateCSRFToken();
                         <label for="add_teacher_id">Teacher</label>
                         <select id="add_teacher_id" name="teacher_id" required>
                             <option value="">Select Teacher</option>
-                            <?php foreach ($teachers as $teacher): ?>
+                            <?php foreach ($teachers as $teacher) : ?>
                                 <option value="<?= $teacher['id'] ?>"><?= htmlspecialchars($teacher['name']) ?></option>
                             <?php endforeach; ?>
                         </select>

@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /notes/notes.php');
         exit;
     }
-    
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
             $teacherId = $currentUser['id'];
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = !empty($_POST['course_id']) ? (int)$_POST['course_id'] : null;
             $tags = $_POST['tags'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
-            
+
             if (empty($title) || empty($content)) {
                 setFlashMessage('error', 'Title and content are required');
             } else {
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = !empty($_POST['course_id']) ? (int)$_POST['course_id'] : null;
             $tags = $_POST['tags'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
-            
+
             if (empty($title) || empty($content)) {
                 setFlashMessage('error', 'Title and content are required');
             } else {
@@ -111,12 +111,12 @@ if ($filterCourse) {
     $notes = array_filter($notes, fn($n) => $n['course_id'] == $filterCourse);
 }
 if ($filterTag) {
-    $notes = array_filter($notes, function($n) use ($filterTag) {
+    $notes = array_filter($notes, function ($n) use ($filterTag) {
         return stripos($n['tags'], $filterTag) !== false;
     });
 }
 if ($search) {
-    $notes = array_filter($notes, function($n) use ($search) {
+    $notes = array_filter($notes, function ($n) use ($search) {
         return stripos($n['title'], $search) !== false ||
                stripos($n['content'], $search) !== false ||
                stripos($n['tags'], $search) !== false;
@@ -146,7 +146,7 @@ $csrfToken = generateCSRFToken();
             <button class="form-toggle-btn" onclick="openAddNoteModal()">+ Add Note</button>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
@@ -160,7 +160,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_student" name="filter_student">
                         <option value="">All Students</option>
                         <option value="unlinked" <?= $filterStudent === 'unlinked' ? 'selected' : '' ?>>Unlinked Notes</option>
-                        <?php foreach ($allStudents as $student): ?>
+                        <?php foreach ($allStudents as $student) : ?>
                             <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
@@ -172,7 +172,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_course" name="filter_course">
                         <option value="">All Courses</option>
                         <option value="unlinked" <?= $filterCourse === 'unlinked' ? 'selected' : '' ?>>Unlinked Notes</option>
-                        <?php foreach ($teacherCourses as $course): ?>
+                        <?php foreach ($teacherCourses as $course) : ?>
                             <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
@@ -194,13 +194,13 @@ $csrfToken = generateCSRFToken();
         
         
         <!-- Notes List -->
-        <?php if (empty($notes)): ?>
+        <?php if (empty($notes)) : ?>
             <div class="empty-state">
                 <p>No notes found.</p>
             </div>
-        <?php else: ?>
+        <?php else : ?>
             <div style="display: grid; gap: 1.5rem;">
-                <?php foreach ($notes as $note): ?>
+                <?php foreach ($notes as $note) : ?>
                     <?php
                     $student = $note['student_id'] ? getUserById($note['student_id']) : null;
                     $course = $note['course_id'] ? getCourseById($note['course_id']) : null;
@@ -223,16 +223,16 @@ $csrfToken = generateCSRFToken();
                             <?= nl2br(htmlspecialchars(substr($note['content'], 0, 200))) ?><?= strlen($note['content']) > 200 ? '...' : '' ?>
                         </div>
                         <div class="note-card-meta">
-                            <?php if ($student): ?>
+                            <?php if ($student) : ?>
                                 <span><strong>Student:</strong> <?= htmlspecialchars($student['name']) ?></span>
                             <?php endif; ?>
-                            <?php if ($course): ?>
+                            <?php if ($course) : ?>
                                 <span><strong>Course:</strong> <?= htmlspecialchars($course['name']) ?></span>
                             <?php endif; ?>
                             <span><strong>Date:</strong> <?= htmlspecialchars($note['date']) ?></span>
-                            <?php if (!empty($tags)): ?>
+                            <?php if (!empty($tags)) : ?>
                                 <div class="note-card-tags">
-                                    <?php foreach ($tags as $tag): ?>
+                                    <?php foreach ($tags as $tag) : ?>
                                         <span class="badge badge-info"><?= htmlspecialchars($tag) ?></span>
                                     <?php endforeach; ?>
                                 </div>
@@ -267,7 +267,7 @@ $csrfToken = generateCSRFToken();
                         <label for="add_student_id">Student (Optional)</label>
                         <select id="add_student_id" name="student_id">
                             <option value="">None</option>
-                            <?php foreach ($allStudents as $student): ?>
+                            <?php foreach ($allStudents as $student) : ?>
                                 <option value="<?= $student['id'] ?>"><?= htmlspecialchars($student['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -276,7 +276,7 @@ $csrfToken = generateCSRFToken();
                         <label for="add_course_id">Course (Optional)</label>
                         <select id="add_course_id" name="course_id">
                             <option value="">None</option>
-                            <?php foreach ($teacherCourses as $course): ?>
+                            <?php foreach ($teacherCourses as $course) : ?>
                                 <option value="<?= $course['id'] ?>"><?= htmlspecialchars($course['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -322,7 +322,7 @@ $csrfToken = generateCSRFToken();
                         <label for="edit_student_id">Student (Optional)</label>
                         <select id="edit_student_id" name="student_id">
                             <option value="">None</option>
-                            <?php foreach ($allStudents as $student): ?>
+                            <?php foreach ($allStudents as $student) : ?>
                                 <option value="<?= $student['id'] ?>"><?= htmlspecialchars($student['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -331,7 +331,7 @@ $csrfToken = generateCSRFToken();
                         <label for="edit_course_id">Course (Optional)</label>
                         <select id="edit_course_id" name="course_id">
                             <option value="">None</option>
-                            <?php foreach ($teacherCourses as $course): ?>
+                            <?php foreach ($teacherCourses as $course) : ?>
                                 <option value="<?= $course['id'] ?>"><?= htmlspecialchars($course['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -445,7 +445,7 @@ $csrfToken = generateCSRFToken();
         }
     });
     
-    <?php if ($editingNote): ?>
+    <?php if ($editingNote) : ?>
     // Auto-open edit modal if editing from URL
     document.addEventListener('DOMContentLoaded', function() {
         const noteData = <?= json_encode($editingNote, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;

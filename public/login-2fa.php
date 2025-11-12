@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid security token. Please try again.';
     } else {
         $code = trim($_POST['code'] ?? '');
-        
+
         if (empty($code)) {
             $error = 'Please enter the verification code';
         } elseif (empty($user['twofa_secret'])) {
@@ -50,10 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Clear pending 2FA data
             unset($_SESSION['pending_2fa_user_id']);
             unset($_SESSION['pending_2fa_email']);
-            
+
             // Regenerate session ID for security after successful 2FA
             session_regenerate_id(true);
-            
+
             // Set authenticated session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user'] = $user;
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['role'] = $user['role'];
             $_SESSION['authenticated'] = true;
             $_SESSION['login_time'] = time();
-            
+
             $redirect = getRedirectAfterLogin();
             header('Location: ' . $redirect);
             exit;
@@ -97,7 +97,7 @@ $csrfToken = generateCSRFToken();
                         <p>Enter the code from your authenticator app</p>
                     </div>
                     
-                    <?php if ($error): ?>
+                    <?php if ($error) : ?>
                         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
                     

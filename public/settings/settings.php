@@ -25,40 +25,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         header('Location: /settings/settings.php?tab=' . ($_POST['action'] === 'update_profile' ? 'profile' : '2fa'));
         exit;
     }
-    
+
     if ($_POST['action'] === 'update_profile') {
         $firstName = trim($_POST['first_name'] ?? '');
         $lastName = trim($_POST['last_name'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        
+
         $updateData = [
             'name' => $currentUser['name'],
             'email' => $currentUser['email'],
             'role' => $currentUser['role'],
             'status' => $currentUser['status'] ?? 'Active'
         ];
-        
+
         $hasChanges = false;
-        
+
         // Update first name and last name
         $currentFirstName = $currentUser['first_name'] ?? '';
         $currentLastName = $currentUser['last_name'] ?? '';
-        
+
         if (!empty($firstName) && $firstName !== $currentFirstName) {
             $updateData['first_name'] = $firstName;
             $hasChanges = true;
         } elseif (isset($currentUser['first_name'])) {
             $updateData['first_name'] = $currentUser['first_name'];
         }
-        
+
         if (!empty($lastName) && $lastName !== $currentLastName) {
             $updateData['last_name'] = $lastName;
             $hasChanges = true;
         } elseif (isset($currentUser['last_name'])) {
             $updateData['last_name'] = $currentUser['last_name'];
         }
-        
+
         // Update full name based on first and last name
         if ($hasChanges || (!empty($firstName) && !empty($lastName))) {
             $fullName = trim(($firstName ?: $currentFirstName) . ' ' . ($lastName ?: $currentLastName));
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $hasChanges = true;
             }
         }
-        
+
         // Update password if provided
         if (!empty($password)) {
             if ($password !== $confirmPassword) {
@@ -84,36 +84,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $updateData['password'] = password_hash($password, PASSWORD_BCRYPT);
             $hasChanges = true;
         }
-        
+
         // Handle profile picture upload
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['profile_picture'];
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             $maxSize = 5 * 1024 * 1024; // 5MB
-            
+
             if (!in_array($file['type'], $allowedTypes)) {
                 setFlashMessage('error', 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
                 header('Location: /settings/settings.php?tab=profile');
                 exit;
             }
-            
+
             if ($file['size'] > $maxSize) {
                 setFlashMessage('error', 'File size too large. Maximum size is 5MB.');
                 header('Location: /settings/settings.php?tab=profile');
                 exit;
             }
-            
+
             // Create uploads directory if it doesn't exist
             $uploadDir = __DIR__ . '/../uploads/profiles/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-            
+
             // Generate unique filename
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = 'profile_' . $currentUser['id'] . '_' . time() . '.' . $extension;
             $filepath = $uploadDir . $filename;
-            
+
             // Delete old profile picture if exists
             if (!empty($currentUser['profile_picture'])) {
                 $oldFile = __DIR__ . '/../uploads/profiles/' . basename($currentUser['profile_picture']);
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     @unlink($oldFile);
                 }
             }
-            
+
             if (move_uploaded_file($file['tmp_name'], $filepath)) {
                 $updateData['profile_picture'] = '/uploads/profiles/' . $filename;
                 $hasChanges = true;
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 exit;
             }
         }
-        
+
         if ($hasChanges) {
             if (updateUser($currentUser['id'], $updateData)) {
                 $_SESSION['user'] = getUserById($currentUser['id']);
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             setFlashMessage('info', 'No changes detected.');
         }
-        
+
         header('Location: /settings/settings.php?tab=profile');
         exit;
     }
@@ -156,38 +156,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: /settings/settings.php?tab=2fa');
         exit;
     }
-    
+
     if ($_POST['action'] === 'enable_2fa') {
         // Generate new secret
         $secret = generateTOTPSecret();
-        
+
         // Log the secret being generated
         error_log('enable_2fa - Generated secret: [' . $secret . '] (length: ' . strlen($secret) . ')');
-        
+
         // Only update the 2FA fields
         $updateData = [
             'twofa_secret' => $secret,
             'twofa_enabled' => false // Not enabled until verified
         ];
-        
+
         // Log the update data
         error_log('enable_2fa - Update data: ' . print_r($updateData, true));
         error_log('enable_2fa - User ID: ' . $currentUser['id']);
-        
+
         $updateResult = updateUser($currentUser['id'], $updateData);
-        
+
         // Log the result
         error_log('enable_2fa - updateUser returned: ' . ($updateResult ? 'true' : 'false'));
-        
+
         if ($updateResult) {
             // Small delay to ensure database write is complete
             usleep(100000); // 0.1 seconds
-            
+
             // Verify the secret was saved - refresh user data from database (force fresh fetch)
             $updatedUser = getUserById($currentUser['id'], true);
             $savedSecret = trim($updatedUser['twofa_secret'] ?? '');
             $expectedSecret = trim($secret);
-            
+
             if ($updatedUser && !empty($savedSecret) && $savedSecret === $expectedSecret) {
                 $_SESSION['user'] = $updatedUser;
                 setFlashMessage('success', '2FA secret generated. Please scan the QR code and enter the verification code.');
@@ -207,12 +207,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             setFlashMessage('error', 'Failed to update user. Please check the error logs for details.');
         }
     }
-    
+
     if ($_POST['action'] === 'verify_2fa') {
         $code = trim($_POST['code'] ?? '');
         // Force fresh fetch to ensure we have the latest secret
         $user = getUserById($currentUser['id'], true);
-        
+
         if (empty($code)) {
             setFlashMessage('error', 'Please enter the verification code');
             header('Location: /settings/settings.php?tab=2fa&verify=1');
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             updateUser($currentUser['id'], [
                 'twofa_enabled' => true
             ]);
-            
+
             // Refresh session with latest data (updateUser already updates session, but ensure consistency)
             $_SESSION['user'] = getUserById($currentUser['id'], true);
             setFlashMessage('success', '2FA has been successfully enabled!');
@@ -238,16 +238,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             exit;
         }
     }
-    
+
     if ($_POST['action'] === 'disable_2fa') {
         $password = $_POST['password'] ?? '';
-        
+
         if (empty($password)) {
             setFlashMessage('error', 'Password is required to disable 2FA.');
             header('Location: /settings/settings.php?tab=2fa');
             exit;
         }
-        
+
         // Get fresh user data to verify password
         $user = getUserById($currentUser['id'], true);
         if (!$user) {
@@ -255,21 +255,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             header('Location: /settings/settings.php?tab=2fa');
             exit;
         }
-        
+
         // Verify password
         if (!password_verify($password, $user['password'])) {
             setFlashMessage('error', 'Invalid password. Please try again.');
             header('Location: /settings/settings.php?tab=2fa');
             exit;
         }
-        
+
         // Password verified - disable 2FA
         updateUser($currentUser['id'], [
             'twofa_secret' => null,
             'twofa_enabled' => false,
             'twofa_last_used_timestep' => null
         ]);
-        
+
         // Refresh session with latest data (updateUser already updates session, but ensure consistency)
         $_SESSION['user'] = getUserById($currentUser['id'], true);
         setFlashMessage('success', '2FA has been disabled.');
@@ -565,7 +565,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             <h1>Settings</h1>
         </div>
         
-        <?php if ($flash): ?>
+        <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
@@ -592,12 +592,12 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                         
                         <div class="profile-picture-section">
                             <div class="profile-picture-container">
-                                <?php 
+                                <?php
                                 $profilePic = $currentUser['profile_picture'] ?? null;
-                                if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)):
-                                ?>
+                                if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)) :
+                                    ?>
                                     <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile Picture" class="profile-picture-preview" id="profile-preview">
-                                <?php else: ?>
+                                <?php else : ?>
                                     <div class="profile-picture-placeholder" id="profile-preview">
                                         <span class="placeholder-icon">👤</span>
                                     </div>
@@ -671,7 +671,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                     </span>
                 </div>
                 
-                <?php if ($twofaEnabled): ?>
+                <?php if ($twofaEnabled) : ?>
                     <!-- 2FA Enabled State -->
                     <div class="card">
                         <h2>2FA is Active</h2>
@@ -702,9 +702,9 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                             </button>
                         </form>
                     </div>
-                <?php elseif ($showVerify): ?>
+                <?php elseif ($showVerify) : ?>
                     <!-- Verification Step -->
-                    <?php if (empty($twofaSecret)): ?>
+                    <?php if (empty($twofaSecret)) : ?>
                         <div class="card">
                             <div class="alert alert-error">
                                 <p><strong>Error:</strong> No 2FA secret found. The secret may not have been saved properly.</p>
@@ -716,14 +716,14 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                 </form>
                             </div>
                         </div>
-                    <?php else: ?>
+                    <?php else : ?>
                         <div class="card">
                             <h2>Verify 2FA Setup</h2>
                             <p>Scan the QR code with your authenticator app, then enter the 6-digit code to complete setup.</p>
                             
                             <div class="twofa-setup">
                                 <div class="qr-code-container">
-                                    <?php 
+                                    <?php
                                     $qrUrl = generateQRCodeURL($twofaSecret, $currentUser['email']);
                                     ?>
                                     <img src="<?= htmlspecialchars($qrUrl) ?>" alt="2FA QR Code" style="max-width: 100%; height: auto; display: block; border: 2px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-md);">
@@ -770,7 +770,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                         </div>
                     </div>
                     <?php endif; ?>
-                <?php else: ?>
+                <?php else : ?>
                     <!-- Setup 2FA -->
                     <div class="card">
                         <h2>Enable Two-Factor Authentication</h2>

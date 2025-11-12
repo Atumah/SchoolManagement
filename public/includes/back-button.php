@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Back Button Component
- * 
+ *
  * Shows a back button only on pages that are NOT directly accessible from navigation
  * (i.e., pages opened as a result of actions like edit forms, detail views, etc.)
  */
@@ -40,10 +40,10 @@ $hasActionParam = isset($_GET['action']) && !empty($_GET['action']);
 // 2. OR is a nav bar page but opened with action parameters (like ?edit=1)
 $showBackButton = !$isNavBarPage || ($isNavBarPage && ($hasEditParam || $hasIdParam || $hasActionParam));
 
-if ($showBackButton):
+if ($showBackButton) :
     // Determine fallback URL based on context
     $fallbackUrl = '/index.php';
-    
+
     // For 2FA login, go back to regular login
     if (strpos($currentPage, 'login-2fa.php') !== false) {
         $fallbackUrl = '/login.php';
@@ -69,7 +69,7 @@ if ($showBackButton):
             $fallbackUrl = '/settings/settings.php';
         }
     }
-?>
+    ?>
     <div class="back-button-container">
         <button type="button" class="back-button" onclick="goBack(); return false;" title="Go back">
             <span class="back-button-icon">←</span>

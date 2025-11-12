@@ -15,16 +15,16 @@ if (session_status() === PHP_SESSION_NONE) {
         ini_set('session.cookie_httponly', '1');
         ini_set('session.cookie_secure', '0'); // Set to 1 in production with HTTPS
         ini_set('session.use_strict_mode', '1');
-        
+
         // Set cookie parameters (must be called before session_start)
         session_set_cookie_params([
             'httponly' => true,
             'secure' => false, // Set to true in production with HTTPS
             'samesite' => 'Lax'
         ]);
-        
+
         session_start();
-        
+
         // Regenerate session ID periodically for security
         if (!isset($_SESSION['created'])) {
             $_SESSION['created'] = time();
@@ -54,7 +54,7 @@ function getCurrentUser(): ?array
     if (!isLoggedIn()) {
         return null;
     }
-    
+
     require_once __DIR__ . '/data.php';
     return getUserById($_SESSION['user_id']);
 }
@@ -77,7 +77,7 @@ function requireAuth(): void
 function requireRole(string $role): void
 {
     requireAuth();
-    
+
     $user = getCurrentUser();
     if ($user === null || $user['role'] !== $role) {
         header('Location: /errors/403.php');
@@ -91,7 +91,7 @@ function requireRole(string $role): void
 function requireAnyRole(array $roles): void
 {
     requireAuth();
-    
+
     $user = getCurrentUser();
     if ($user === null || !in_array($user['role'], $roles, true)) {
         header('Location: /errors/403.php');
@@ -123,36 +123,36 @@ function hasAnyRole(array $roles): bool
 function login(string $email, string $password): bool
 {
     require_once __DIR__ . '/data.php';
-    
+
     // Validate email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
-    
+
     // Validate password is not empty
     if (empty($password)) {
         return false;
     }
-    
+
     $user = getUserByEmail($email);
     if ($user === null) {
         return false;
     }
-    
+
     // Verify password using bcrypt
     if (!password_verify($password, $user['password'])) {
         return false;
     }
-    
+
     // Check if account is active
     if ($user['status'] !== 'Active') {
         return false;
     }
-    
+
     // Check if 2FA is enabled
     $twofaEnabled = isset($user['twofa_enabled']) && ($user['twofa_enabled'] === true || $user['twofa_enabled'] === 1);
     $hasTwofaSecret = !empty($user['twofa_secret']);
-    
+
     if ($twofaEnabled && $hasTwofaSecret) {
         // 2FA is enabled - require verification before completing login
         // Don't complete login yet, set pending 2FA state
@@ -161,18 +161,18 @@ function login(string $email, string $password): bool
         // Don't set authenticated session yet - wait for 2FA verification
         return true; // Return true to indicate password was correct, but 2FA is required
     }
-    
+
     // No 2FA required - complete login
     // Regenerate session ID on login for security
     session_regenerate_id(true);
-    
+
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user'] = $user;
     $_SESSION['username'] = $user['username'] ?? null;
     $_SESSION['role'] = $user['role'];
     $_SESSION['authenticated'] = true;
     $_SESSION['login_time'] = time();
-    
+
     return true;
 }
 
@@ -182,11 +182,11 @@ function login(string $email, string $password): bool
 function logout(): void
 {
     $_SESSION = [];
-    
+
     if (isset($_COOKIE[session_name()])) {
         setcookie(session_name(), '', time() - 3600, '/');
     }
-    
+
     session_destroy();
     session_start();
 }
@@ -227,14 +227,14 @@ function getFlashMessage(): ?array
     if (!isset($_SESSION['flash_type']) || !isset($_SESSION['flash_message'])) {
         return null;
     }
-    
+
     $message = [
         'type' => $_SESSION['flash_type'],
         'message' => $_SESSION['flash_message']
     ];
-    
+
     unset($_SESSION['flash_type'], $_SESSION['flash_message']);
-    
+
     return $message;
 }
 
