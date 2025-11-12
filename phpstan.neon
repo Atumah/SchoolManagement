@@ -1,0 +1,10 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - public
+        - config
+    bootstrapFiles:
+        - bootstrap/phpstan-bootstrap.php
+    checkMissingIterableValueType: true
+
