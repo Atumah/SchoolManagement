@@ -35,7 +35,7 @@ services:
     image: mariadb:11.4
     container_name: mariadb
     ports:
-      - "3307:3306"
+      - "49202:3306"
     volumes:
       - ./docker/mysql-data:/var/lib/mysql
     env_file: .env
