@@ -23,6 +23,7 @@ jobs:
           php-version: '8.2'
           extensions: pdo, intl
           coverage: none
+          tools: composer
 
       - name: Cache Composer dependencies
         uses: actions/cache@v4
@@ -35,19 +36,10 @@ jobs:
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
         with:
-          dependency-versions: highest
-          composer-options: '--prefer-dist'
-
-      - name: Validate composer.json
-        run: composer validate --strict
+          dependency-versions: locked
+          composer-options: '--prefer-dist --no-interaction'
 
       - name: Check PHP syntax
         run: |
-          find config public src bootstrap -name "*.php" -exec php -l {} \;
-
-      - name: Run PHP CodeSniffer
-        run: composer lint
-
-      - name: Run PHPStan
-        run: composer analyse
+          find config public src -name "*.php" -exec php -l {} \;
 

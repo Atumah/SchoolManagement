@@ -13,6 +13,7 @@ services:
     environment:
       APACHE_DOCUMENT_ROOT: /var/www/html/public
       HOST_HTTP_PORT: ${HOST_HTTP_PORT:-49200}
+      PORT: ${PORT:-49200}
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +68,7 @@ services:
       PMA_PASSWORD: ${DB_PASSWORD:-secret}
       UPLOAD_LIMIT: 512M
       HOST_PHPMYADMIN_PORT: ${HOST_PHPMYADMIN_PORT:-49201}
+      PORT: ${PORT:-49201}
     command:
       - /bin/sh
       - -c

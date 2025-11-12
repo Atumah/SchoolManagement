@@ -2,76 +2,134 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/data.php';
 
-use App\Database\Migrator;
-use App\Repository\SampleRepository;
-use App\Support\Env;
+// Redirect to login if not authenticated (BEFORE any output)
+if (!isLoggedIn()) {
+    header('Location: /login.php');
+    exit;
+}
 
-$appName = Env::string('APP_NAME', 'SchoolManagement');
-$appEnv = Env::string('APP_ENV', 'local');
-$appUrl = Env::string('APP_URL', 'http://localhost:8080');
-$phpMyAdminPort = Env::string('HOST_PHPMYADMIN_PORT', '49201');
-$phpMyAdminUrl = sprintf('http://localhost:%s', $phpMyAdminPort);
+$currentUser = getCurrentUser();
+$flash = getFlashMessage();
 
-$migrator = Migrator::forDefaultConnection();
-$migrator->ensureSchema();
-
-$repository = SampleRepository::forDefaultConnection();
-$messages = $repository->latestMessages();
+// Get user statistics
+$stats = [];
+if ($currentUser['role'] === 'Teacher') {
+    $teacherCourses = getCoursesByTeacher($currentUser['id']);
+    $stats['courses'] = count($teacherCourses);
+    $stats['grades'] = count(getGradesByTeacher($currentUser['id']));
+    $stats['progress'] = count(getProgressByTeacher($currentUser['id']));
+    $stats['notes'] = count(getNotesByTeacher($currentUser['id']));
+} elseif ($currentUser['role'] === 'Admin') {
+    $stats['users'] = count(getAllUsers());
+    $stats['courses'] = count(getAllCourses());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($appName) ?></title>
+    <title>Dashboard - Morning Star School</title>
     <link rel="stylesheet" href="/assets/styles.css">
+    <link rel="stylesheet" href="/assets/nav.css">
+    <link rel="stylesheet" href="/assets/components.css">
 </head>
 <body>
-    <header class="hero">
-        <div class="container">
-            <h1><?= htmlspecialchars($appName) ?></h1>
-            <p>Your PHP + MariaDB workspace is ready. Environment: <strong><?= htmlspecialchars($appEnv) ?></strong></p>
-            <p>Base URL: <a href="<?= htmlspecialchars($appUrl) ?>"><?= htmlspecialchars($appUrl) ?></a></p>
-            <p>
-                Database console:
-                <a href="<?= htmlspecialchars($phpMyAdminUrl) ?>" target="_blank"
-                   rel="noopener noreferrer">phpMyAdmin</a>
-            </p>
-        </div>
-    </header>
+    <?php include __DIR__ . '/includes/nav.php'; ?>
     <main class="container">
-        <section>
-            <h2>Starter Checklist</h2>
-            <ol>
-                <li>Copy <code>.env.example</code> to <code>.env</code> and adjust credentials.</li>
-                <li>Run <code>docker compose up --build</code> to start the stack.</li>
-                <li>Execute <code>composer check</code> before every push.</li>
-            </ol>
-        </section>
-        <section>
-            <h2>Latest Messages</h2>
-            <?php if ($messages === []) : ?>
-                <p>No messages found. Add your own by inserting rows into the <code>samples</code> table.</p>
-            <?php else : ?>
-                <ul>
-                    <?php foreach ($messages as $message) : ?>
-                        <li>
-                            <span class="message"><?= htmlspecialchars($message['message']) ?></span>
-                            <span class="meta">#<?= htmlspecialchars((string) $message['id']) ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+        <div class="page-header">
+            <h1>Welcome, <?= htmlspecialchars($currentUser['name']) ?></h1>
+        </div>
+        
+        <?php if ($flash) : ?>
+            <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
+                <?= htmlspecialchars($flash['message']) ?>
+            </div>
+        <?php endif; ?>
+        
+        <div class="dashboard-grid">
+            <?php if ($currentUser['role'] === 'Teacher') : ?>
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['courses'] ?></h3>
+                        <p>Courses</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['grades'] ?></h3>
+                        <p>Grades</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['progress'] ?></h3>
+                        <p>Progress Entries</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['notes'] ?></h3>
+                        <p>Notes</p>
+                    </div>
+                </div>
+            <?php elseif ($currentUser['role'] === 'Admin') : ?>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['users'] ?></h3>
+                        <p>Users</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-content">
+                        <h3><?= $stats['courses'] ?></h3>
+                        <p>Courses</p>
+                    </div>
+                </div>
             <?php endif; ?>
-        </section>
+        </div>
+        
+        <div class="card">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <?php if ($currentUser['role'] === 'Teacher') : ?>
+                    <a href="/grades/view.php" class="action-btn">
+                        <span class="action-icon">📊</span>
+                        <span>Manage Grades</span>
+                    </a>
+                    <a href="/courses/join.php" class="action-btn">
+                        <span class="action-icon">➕</span>
+                        <span>Join Course</span>
+                    </a>
+                    <a href="/progress/progress.php" class="action-btn">
+                        <span class="action-icon">📈</span>
+                        <span>Track Progress</span>
+                    </a>
+                    <a href="/notes/notes.php" class="action-btn">
+                        <span class="action-icon">📝</span>
+                        <span>Take Notes</span>
+                    </a>
+                <?php elseif ($currentUser['role'] === 'Admin') : ?>
+                    <a href="/users/users.php" class="action-btn">
+                        <span class="action-icon">👥</span>
+                        <span>Manage Users</span>
+                    </a>
+                    <a href="/courses/course.php" class="action-btn">
+                        <span class="action-icon">📚</span>
+                        <span>Manage Courses</span>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
     </main>
-    <footer class="container">
-        <small>
-            &copy; <?= date('Y') ?> <?= htmlspecialchars($appName) ?>.
-            Powered by Docker, Composer, and GitHub Actions.
-        </small>
-    </footer>
 </body>
 </html>
-
