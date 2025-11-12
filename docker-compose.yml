@@ -1,0 +1,82 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: php_app
+    volumes:
+      - ./:/var/www/html:delegated
+      - ./docker/php/sessions:/var/lib/php/sessions
+    ports:
+      - "49200:80"
+    env_file: .env
+    environment:
+      APACHE_DOCUMENT_ROOT: /var/www/html/public
+      HOST_HTTP_PORT: ${HOST_HTTP_PORT:-49200}
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+          PORT="${HOST_HTTP_PORT}"
+          if [ -z "$PORT" ]; then PORT="49200"; fi
+          printf '\nFrontend available at http://localhost:%s\n\n' "$PORT"
+          exec apache2-foreground
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  db:
+    image: mariadb:11.4
+    container_name: mariadb
+    ports:
+      - "49202:3306"
+    volumes:
+      - ./docker/mysql-data:/var/lib/mysql
+    env_file: .env
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+      MARIADB_DATABASE: ${DB_DATABASE:-app}
+      MARIADB_USER: ${DB_USERNAME:-app}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u ${DB_USERNAME:-app} -p${DB_PASSWORD:-secret}"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2
+    container_name: phpmyadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    platform: linux/amd64
+    ports:
+      - "49201:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME:-app}
+      PMA_PASSWORD: ${DB_PASSWORD:-secret}
+      UPLOAD_LIMIT: 512M
+      HOST_PHPMYADMIN_PORT: ${HOST_PHPMYADMIN_PORT:-49201}
+    command:
+      - /bin/sh
+      - -c
+      - |
+          PORT="${HOST_PHPMYADMIN_PORT}"
+          if [ -z "$PORT" ]; then PORT="49201"; fi
+          printf '\nphpMyAdmin available at http://localhost:%s\n\n' "$PORT"
+          exec apache2-foreground
+    restart: unless-stopped
+    volumes:
+      - ./docker/phpmyadmin/config.secret.inc.php:/etc/phpmyadmin/config.secret.inc.php:ro
+
+
