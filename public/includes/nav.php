@@ -17,127 +17,269 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
             <span>Morning Star</span>
         </a>
         
-        <?php if ($currentUser): ?>
+        <?php if ($currentUser) : ?>
             <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
             <ul class="navbar-menu" id="navbar-menu">
-                <li><a href="/index.php" class="<?= strpos($currentPage, 'index.php') !== false ? 'active' : '' ?>">Home</a></li>
-                
-                <?php if ($currentUser['role'] === 'Teacher'): ?>
+                <?php
+                $isIndexPage = strpos($currentPage, 'index.php') !== false;
+                ?>
+                <li><a href="/index.php" class="<?= $isIndexPage ? 'active' : '' ?>">Home</a></li>
+
+                <?php if ($currentUser['role'] === 'Teacher') : ?>
                     <!-- Content -->
+                    <?php
+                    $isContentPage = strpos($currentPage, 'announcements.php') !== false
+                        || strpos($currentPage, 'events.php') !== false;
+                    $isAnnouncementsPage = strpos($currentPage, 'announcements.php') !== false;
+                    $isEventsPage = strpos($currentPage, 'events.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'announcements.php') !== false || strpos($currentPage, 'events.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isContentPage ? 'active' : '' ?>">
                             Content <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/announcements/announcements.php" class="<?= strpos($currentPage, 'announcements.php') !== false ? 'active' : '' ?>">Announcements</a></li>
-                            <li><a href="/events/events.php" class="<?= strpos($currentPage, 'events.php') !== false ? 'active' : '' ?>">Events</a></li>
+                            <li>
+                                <a href="/announcements/announcements.php"
+                                   class="<?= $isAnnouncementsPage ? 'active' : '' ?>">Announcements</a>
+                            </li>
+                            <li>
+                                <a href="/events/events.php"
+                                   class="<?= $isEventsPage ? 'active' : '' ?>">Events</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Academic -->
+                    <?php
+                    $isAcademicPage = strpos($currentPage, 'course.php') !== false
+                        || strpos($currentPage, 'attendance.php') !== false
+                        || strpos($currentPage, 'view.php') !== false
+                        || strpos($currentPage, 'progress.php') !== false;
+                    $isCoursePage = strpos($currentPage, 'course.php') !== false;
+                    $isAttendancePage = strpos($currentPage, 'attendance.php') !== false;
+                    $isGradesPage = strpos($currentPage, 'view.php') !== false;
+                    $isProgressPage = strpos($currentPage, 'progress.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'course.php') !== false || strpos($currentPage, 'attendance.php') !== false || strpos($currentPage, 'view.php') !== false || strpos($currentPage, 'progress.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isAcademicPage ? 'active' : '' ?>">
                             Academic <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/courses/course.php" class="<?= strpos($currentPage, 'course.php') !== false ? 'active' : '' ?>">Courses</a></li>
-                            <li><a href="/attendance/attendance.php" class="<?= strpos($currentPage, 'attendance.php') !== false ? 'active' : '' ?>">Attendance</a></li>
-                            <li><a href="/grades/view.php" class="<?= strpos($currentPage, 'view.php') !== false ? 'active' : '' ?>">Grades</a></li>
-                            <li><a href="/progress/progress.php" class="<?= strpos($currentPage, 'progress.php') !== false ? 'active' : '' ?>">Progress</a></li>
+                            <li>
+                                <a href="/courses/course.php"
+                                   class="<?= $isCoursePage ? 'active' : '' ?>">Courses</a>
+                            </li>
+                            <li>
+                                <a href="/attendance/attendance.php"
+                                   class="<?= $isAttendancePage ? 'active' : '' ?>">Attendance</a>
+                            </li>
+                            <li>
+                                <a href="/grades/view.php"
+                                   class="<?= $isGradesPage ? 'active' : '' ?>">Grades</a>
+                            </li>
+                            <li>
+                                <a href="/progress/progress.php"
+                                   class="<?= $isProgressPage ? 'active' : '' ?>">Progress</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Personal -->
+                    <?php
+                    $isPersonalPage = strpos($currentPage, 'notes.php') !== false
+                        || strpos($currentPage, 'appointments.php') !== false
+                        || strpos($currentPage, 'overview.php') !== false;
+                    $isNotesPage = strpos($currentPage, 'notes.php') !== false;
+                    $isAppointmentsPage = strpos($currentPage, 'appointments.php') !== false;
+                    $isOverviewPage = strpos($currentPage, 'overview.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'notes.php') !== false || strpos($currentPage, 'appointments.php') !== false || strpos($currentPage, 'overview.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isPersonalPage ? 'active' : '' ?>">
                             Personal <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/notes/notes.php" class="<?= strpos($currentPage, 'notes.php') !== false ? 'active' : '' ?>">Notes</a></li>
-                            <li><a href="/appointments/appointments.php" class="<?= strpos($currentPage, 'appointments.php') !== false ? 'active' : '' ?>">Appointments</a></li>
-                            <li><a href="/overview/overview.php" class="<?= strpos($currentPage, 'overview.php') !== false ? 'active' : '' ?>">Overview</a></li>
+                            <li>
+                                <a href="/notes/notes.php"
+                                   class="<?= $isNotesPage ? 'active' : '' ?>">Notes</a>
+                            </li>
+                            <li>
+                                <a href="/appointments/appointments.php"
+                                   class="<?= $isAppointmentsPage ? 'active' : '' ?>">Appointments</a>
+                            </li>
+                            <li>
+                                <a href="/overview/overview.php"
+                                   class="<?= $isOverviewPage ? 'active' : '' ?>">Overview</a>
+                            </li>
                         </ul>
                     </li>
-                    
-                <?php elseif ($currentUser['role'] === 'Admin' || $currentUser['role'] === 'Principal'): ?>
+
+                <?php elseif ($currentUser['role'] === 'Admin' || $currentUser['role'] === 'Principal') : ?>
                     <!-- Content -->
+                    <?php
+                    $isContentPageAdmin = strpos($currentPage, 'announcements.php') !== false
+                        || strpos($currentPage, 'events.php') !== false;
+                    $isAnnouncementsPageAdmin = strpos($currentPage, 'announcements.php') !== false;
+                    $isEventsPageAdmin = strpos($currentPage, 'events.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'announcements.php') !== false || strpos($currentPage, 'events.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isContentPageAdmin ? 'active' : '' ?>">
                             Content <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/announcements/announcements.php" class="<?= strpos($currentPage, 'announcements.php') !== false ? 'active' : '' ?>">Announcements</a></li>
-                            <li><a href="/events/events.php" class="<?= strpos($currentPage, 'events.php') !== false ? 'active' : '' ?>">Events</a></li>
+                            <li>
+                                <a href="/announcements/announcements.php"
+                                   class="<?= $isAnnouncementsPageAdmin ? 'active' : '' ?>">Announcements</a>
+                            </li>
+                            <li>
+                                <a href="/events/events.php"
+                                   class="<?= $isEventsPageAdmin ? 'active' : '' ?>">Events</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Management -->
+                    <?php $isUsersPage = strpos($currentPage, 'users.php') !== false; ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= strpos($currentPage, 'users.php') !== false ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isUsersPage ? 'active' : '' ?>">
                             Management <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/users/users.php" class="<?= strpos($currentPage, 'users.php') !== false ? 'active' : '' ?>">Users</a></li>
+                            <li>
+                                <a href="/users/users.php"
+                                   class="<?= $isUsersPage ? 'active' : '' ?>">Users</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Academic -->
+                    <?php
+                    $isAcademicPageAdmin = strpos($currentPage, 'course.php') !== false
+                        || strpos($currentPage, 'view.php') !== false
+                        || strpos($currentPage, 'progress.php') !== false
+                        || strpos($currentPage, 'notes.php') !== false;
+                    $isCoursePageAdmin = strpos($currentPage, 'course.php') !== false;
+                    $isGradesPageAdmin = strpos($currentPage, 'view.php') !== false;
+                    $isProgressPageAdmin = strpos($currentPage, 'progress.php') !== false;
+                    $isNotesPageAdmin = strpos($currentPage, 'notes.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'course.php') !== false || strpos($currentPage, 'view.php') !== false || strpos($currentPage, 'progress.php') !== false || strpos($currentPage, 'notes.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isAcademicPageAdmin ? 'active' : '' ?>">
                             Academic <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                    <li><a href="/courses/course.php" class="<?= strpos($currentPage, 'course.php') !== false ? 'active' : '' ?>">Courses</a></li>
-                    <li><a href="/grades/view.php" class="<?= strpos($currentPage, 'view.php') !== false ? 'active' : '' ?>">Grades</a></li>
-                    <li><a href="/progress/progress.php" class="<?= strpos($currentPage, 'progress.php') !== false ? 'active' : '' ?>">Progress</a></li>
-                    <li><a href="/notes/notes.php" class="<?= strpos($currentPage, 'notes.php') !== false ? 'active' : '' ?>">Notes</a></li>
+                            <li>
+                                <a href="/courses/course.php"
+                                   class="<?= $isCoursePageAdmin ? 'active' : '' ?>">Courses</a>
+                            </li>
+                            <li>
+                                <a href="/grades/view.php"
+                                   class="<?= $isGradesPageAdmin ? 'active' : '' ?>">Grades</a>
+                            </li>
+                            <li>
+                                <a href="/progress/progress.php"
+                                   class="<?= $isProgressPageAdmin ? 'active' : '' ?>">Progress</a>
+                            </li>
+                            <li>
+                                <a href="/notes/notes.php"
+                                   class="<?= $isNotesPageAdmin ? 'active' : '' ?>">Notes</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Personal -->
-                    <li><a href="/appointments/appointments.php" class="<?= strpos($currentPage, 'appointments.php') !== false ? 'active' : '' ?>">Appointments</a></li>
-                    
-                <?php elseif ($currentUser['role'] === 'Web Designer'): ?>
+                    <?php $isAppointmentsPageAdmin = strpos($currentPage, 'appointments.php') !== false; ?>
+                    <li>
+                        <a href="/appointments/appointments.php"
+                           class="<?= $isAppointmentsPageAdmin ? 'active' : '' ?>">Appointments</a>
+                    </li>
+
+                <?php elseif ($currentUser['role'] === 'Web Designer') : ?>
                     <!-- Content -->
+                    <?php
+                    $isContentPageDesigner = strpos($currentPage, 'announcements.php') !== false
+                        || strpos($currentPage, 'events.php') !== false;
+                    $isAnnouncementsPageDesigner = strpos($currentPage, 'announcements.php') !== false;
+                    $isEventsPageDesigner = strpos($currentPage, 'events.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'announcements.php') !== false || strpos($currentPage, 'events.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isContentPageDesigner ? 'active' : '' ?>">
                             Content <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/announcements/announcements.php" class="<?= strpos($currentPage, 'announcements.php') !== false ? 'active' : '' ?>">Announcements</a></li>
-                            <li><a href="/events/events.php" class="<?= strpos($currentPage, 'events.php') !== false ? 'active' : '' ?>">Events</a></li>
+                            <li>
+                                <a href="/announcements/announcements.php"
+                                   class="<?= $isAnnouncementsPageDesigner ? 'active' : '' ?>">Announcements</a>
+                            </li>
+                            <li>
+                                <a href="/events/events.php"
+                                   class="<?= $isEventsPageDesigner ? 'active' : '' ?>">Events</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Management -->
+                    <?php $isUsersPageDesigner = strpos($currentPage, 'users.php') !== false; ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= strpos($currentPage, 'users.php') !== false ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isUsersPageDesigner ? 'active' : '' ?>">
                             Management <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/users/users.php" class="<?= strpos($currentPage, 'users.php') !== false ? 'active' : '' ?>">Users</a></li>
+                            <li>
+                                <a href="/users/users.php"
+                                   class="<?= $isUsersPageDesigner ? 'active' : '' ?>">Users</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Academic -->
+                    <?php
+                    $isAcademicPageDesigner = strpos($currentPage, 'course.php') !== false
+                        || strpos($currentPage, 'view.php') !== false
+                        || strpos($currentPage, 'progress.php') !== false
+                        || strpos($currentPage, 'notes.php') !== false;
+                    $isCoursePageDesigner = strpos($currentPage, 'course.php') !== false;
+                    $isGradesPageDesigner = strpos($currentPage, 'view.php') !== false;
+                    $isProgressPageDesigner = strpos($currentPage, 'progress.php') !== false;
+                    $isNotesPageDesigner = strpos($currentPage, 'notes.php') !== false;
+                    ?>
                     <li class="navbar-dropdown">
-                        <a href="#" class="dropdown-toggle <?= (strpos($currentPage, 'course.php') !== false || strpos($currentPage, 'view.php') !== false || strpos($currentPage, 'progress.php') !== false || strpos($currentPage, 'notes.php') !== false) ? 'active' : '' ?>">
+                        <a href="#" class="dropdown-toggle <?= $isAcademicPageDesigner ? 'active' : '' ?>">
                             Academic <span class="dropdown-arrow">▼</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="/courses/course.php" class="<?= strpos($currentPage, 'course.php') !== false ? 'active' : '' ?>">Courses</a></li>
-                            <li><a href="/grades/view.php" class="<?= strpos($currentPage, 'view.php') !== false ? 'active' : '' ?>">Grades</a></li>
-                            <li><a href="/progress/progress.php" class="<?= strpos($currentPage, 'progress.php') !== false ? 'active' : '' ?>">Progress</a></li>
-                            <li><a href="/notes/notes.php" class="<?= strpos($currentPage, 'notes.php') !== false ? 'active' : '' ?>">Notes</a></li>
+                            <li>
+                                <a href="/courses/course.php"
+                                   class="<?= $isCoursePageDesigner ? 'active' : '' ?>">Courses</a>
+                            </li>
+                            <li>
+                                <a href="/grades/view.php"
+                                   class="<?= $isGradesPageDesigner ? 'active' : '' ?>">Grades</a>
+                            </li>
+                            <li>
+                                <a href="/progress/progress.php"
+                                   class="<?= $isProgressPageDesigner ? 'active' : '' ?>">Progress</a>
+                            </li>
+                            <li>
+                                <a href="/notes/notes.php"
+                                   class="<?= $isNotesPageDesigner ? 'active' : '' ?>">Notes</a>
+                            </li>
                         </ul>
                     </li>
-                    
+
                     <!-- Personal -->
-                    <li><a href="/appointments/appointments.php" class="<?= strpos($currentPage, 'appointments.php') !== false ? 'active' : '' ?>">Appointments</a></li>
+                    <?php $isAppointmentsPageDesigner = strpos($currentPage, 'appointments.php') !== false; ?>
+                    <li>
+                        <a href="/appointments/appointments.php"
+                           class="<?= $isAppointmentsPageDesigner ? 'active' : '' ?>">Appointments</a>
+                    </li>
                 <?php endif; ?>
-                
+
+                <?php $isSettingsPage = strpos($currentPage, 'settings.php') !== false; ?>
                 <li class="navbar-settings-dropdown">
-                    <a href="/settings/settings.php" class="settings-icon <?= strpos($currentPage, 'settings.php') !== false ? 'active' : '' ?>" title="Settings" onclick="event.preventDefault(); toggleSettingsDropdown();">
+                    <a href="/settings/settings.php"
+                       class="settings-icon <?= $isSettingsPage ? 'active' : '' ?>"
+                       title="Settings"
+                       onclick="event.preventDefault(); toggleSettingsDropdown();">
                         ⚙️
                     </a>
                     <div class="settings-dropdown-menu" id="settings-dropdown">

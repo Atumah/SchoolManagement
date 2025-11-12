@@ -7,6 +7,8 @@ declare(strict_types=1);
  * Handles routing and prevents conflicts
  */
 
+namespace App\Router;
+
 class Router
 {
     private static array $routes = [];
@@ -68,4 +70,3 @@ class Router
         return $base . self::normalizePath($path);
     }
 }
-

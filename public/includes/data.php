@@ -43,7 +43,12 @@ function getUserById(int $id, bool $forceFresh = false): ?array
 {
     // Check session first for updated user data (keep this for performance)
     // Skip session cache if forceFresh is true
-    if (!$forceFresh && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user']) && isset($_SESSION['user']['id']) && $_SESSION['user']['id'] === $id) {
+    if (!$forceFresh
+        && session_status() === PHP_SESSION_ACTIVE
+        && isset($_SESSION['user'])
+        && isset($_SESSION['user']['id'])
+        && $_SESSION['user']['id'] === $id
+    ) {
         return $_SESSION['user'];
     }
     

@@ -386,22 +386,22 @@
         height: auto;
         min-height: 100vh;
     }
-    
+
     .auth-panel {
         width: 100%;
         position: relative;
         height: auto;
         min-height: 100vh;
     }
-    
+
     .auth-panel-container.slide-right {
         transform: translateX(0);
     }
-    
+
     .auth-panel.signup-panel {
         transform: none;
     }
-    
+
     .auth-panel-content {
         padding: 2rem 1.5rem;
     }

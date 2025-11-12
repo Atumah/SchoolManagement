@@ -305,7 +305,7 @@ textarea:focus {
 
 /* Shimmer Effect */
 .shimmer {
-    background: linear-gradient(90deg, 
+    background: linear-gradient(90deg,
         rgba(255, 255, 255, 0) 0%,
         rgba(255, 255, 255, 0.1) 50%,
         rgba(255, 255, 255, 0) 100%);
@@ -423,7 +423,7 @@ textarea:focus {
 .modal-dialog {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(37, 47, 69, 0.98));
     border-radius: var(--radius-xl);
-    box-shadow: 
+    box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.5),
         0 10px 10px -5px rgba(0, 0, 0, 0.2),
         0 0 0 1px rgba(59, 130, 246, 0.2);
