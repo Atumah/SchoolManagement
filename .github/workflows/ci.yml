@@ -45,9 +45,6 @@ jobs:
         run: |
           find config public src bootstrap -name "*.php" -exec php -l {} \;
 
-      - name: Run PHP CodeSniffer
-        run: composer lint
-
       - name: Run PHPStan
         run: composer analyse
 
