@@ -35,8 +35,8 @@ jobs:
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
         with:
-          dependency-versions: highest
-          composer-options: '--prefer-dist'
+          dependency-versions: locked
+          composer-options: '--prefer-dist --no-interaction'
 
       - name: Validate composer.json
         run: composer validate --strict
