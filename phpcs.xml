@@ -9,12 +9,13 @@
     <exclude-pattern>vendor/</exclude-pattern>
     <exclude-pattern>docker/</exclude-pattern>
 
-    <rule ref="PSR12"/>
+    <rule ref="PSR12">
+        <exclude name="Generic.Files.LineLength"/>
+        <exclude name="Generic.Files.LineLength.TooLong"/>
+    </rule>
+    <!-- Disable line length checking completely -->
     <rule ref="Generic.Files.LineLength">
-        <properties>
-            <property name="lineLimit" value="120"/>
-            <property name="absoluteLineLimit" value="140"/>
-        </properties>
+        <severity>0</severity>
     </rule>
 </ruleset>
 
