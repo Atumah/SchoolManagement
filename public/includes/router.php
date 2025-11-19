@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace App\Router;
 
-class Router
+class router
 {
     private static array $routes = [];
     private static ?string $basePath = null;

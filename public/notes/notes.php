@@ -105,18 +105,18 @@ $filterTag = $_GET['filter_tag'] ?? '';
 $search = $_GET['search'] ?? '';
 
 if ($filterStudent) {
-    $notes = array_filter($notes, fn($n) => $n['student_id'] == $filterStudent);
+    $notes = array_filter($notes, static fn ($n) => $n['student_id'] === $filterStudent);
 }
 if ($filterCourse) {
-    $notes = array_filter($notes, fn($n) => $n['course_id'] == $filterCourse);
+    $notes = array_filter($notes, static fn ($n) => $n['course_id'] === $filterCourse);
 }
 if ($filterTag) {
-    $notes = array_filter($notes, function ($n) use ($filterTag) {
+    $notes = array_filter($notes, static function ($n) use ($filterTag) {
         return stripos($n['tags'], $filterTag) !== false;
     });
 }
 if ($search) {
-    $notes = array_filter($notes, function ($n) use ($search) {
+    $notes = array_filter($notes, static function ($n) use ($search) {
         return stripos($n['title'], $search) !== false ||
                stripos($n['content'], $search) !== false ||
                stripos($n['tags'], $search) !== false;
@@ -145,13 +145,13 @@ $csrfToken = generateCSRFToken();
             <h1>Notes</h1>
             <button class="form-toggle-btn" onclick="openAddNoteModal()">+ Add Note</button>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <!-- Filters -->
         <div class="filters">
             <form method="GET" action="">
@@ -161,7 +161,7 @@ $csrfToken = generateCSRFToken();
                         <option value="">All Students</option>
                         <option value="unlinked" <?= $filterStudent === 'unlinked' ? 'selected' : '' ?>>Unlinked Notes</option>
                         <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $student['id'] ?>" <?= $filterStudent === $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -173,7 +173,7 @@ $csrfToken = generateCSRFToken();
                         <option value="">All Courses</option>
                         <option value="unlinked" <?= $filterCourse === 'unlinked' ? 'selected' : '' ?>>Unlinked Notes</option>
                         <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $course['id'] ?>" <?= $filterCourse === $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -191,8 +191,8 @@ $csrfToken = generateCSRFToken();
                 <a href="/notes/notes.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
-        
+
+
         <!-- Notes List -->
         <?php if (empty($notes)) : ?>
             <div class="empty-state">
@@ -243,7 +243,7 @@ $csrfToken = generateCSRFToken();
             </div>
         <?php endif; ?>
     </main>
-    
+
     <!-- Add Note Modal -->
     <div class="modal-overlay" id="addNoteModal" onclick="closeAddNoteModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -297,7 +297,7 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <!-- Edit Note Modal -->
     <div class="modal-overlay" id="editNoteModal" onclick="closeEditNoteModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -352,13 +352,13 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <script>
     // Add Note Modal Functions
     function openAddNoteModal() {
         const modal = document.getElementById('addNoteModal');
         if (!modal) return;
-        
+
         // Reset form fields
         document.getElementById('add_title').value = '';
         document.getElementById('add_content').value = '';
@@ -366,31 +366,31 @@ $csrfToken = generateCSRFToken();
         document.getElementById('add_course_id').value = '';
         document.getElementById('add_tags').value = '';
         document.getElementById('add_date').value = '<?= date('Y-m-d') ?>';
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeAddNoteModal() {
         const modal = document.getElementById('addNoteModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeAddNoteModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeAddNoteModal();
         }
     }
-    
+
     // Edit Note Modal Functions
     function openEditNoteModal(note) {
         const modal = document.getElementById('editNoteModal');
         if (!modal) return;
-        
+
         // Populate form fields
         document.getElementById('edit_note_id').value = note.id;
         document.getElementById('edit_title').value = note.title || '';
@@ -399,26 +399,26 @@ $csrfToken = generateCSRFToken();
         document.getElementById('edit_course_id').value = note.course_id || '';
         document.getElementById('edit_tags').value = note.tags || '';
         document.getElementById('edit_date').value = note.date || '<?= date('Y-m-d') ?>';
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeEditNoteModal() {
         const modal = document.getElementById('editNoteModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeEditNoteModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeEditNoteModal();
         }
     }
-    
+
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
         const editButtons = document.querySelectorAll('.edit-note-btn');
@@ -436,7 +436,7 @@ $csrfToken = generateCSRFToken();
             });
         });
     });
-    
+
     // Close any modal on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -444,7 +444,7 @@ $csrfToken = generateCSRFToken();
             closeEditNoteModal();
         }
     });
-    
+
     <?php if ($editingNote) : ?>
     // Auto-open edit modal if editing from URL
     document.addEventListener('DOMContentLoaded', function() {

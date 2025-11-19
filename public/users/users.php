@@ -115,13 +115,13 @@ $filterStatus = $_GET['filter_status'] ?? '';
 $search = $_GET['search'] ?? '';
 
 if ($filterRole) {
-    $users = array_filter($users, fn($u) => $u['role'] === $filterRole);
+    $users = array_filter($users, static fn ($u) => $u['role'] === $filterRole);
 }
 if ($filterStatus) {
-    $users = array_filter($users, fn($u) => $u['status'] === $filterStatus);
+    $users = array_filter($users, static fn ($u) => $u['status'] === $filterStatus);
 }
 if ($search) {
-    $users = array_filter($users, function ($u) use ($search) {
+    $users = array_filter($users, static function ($u) use ($search) {
         return stripos($u['username'], $search) !== false ||
                stripos($u['name'], $search) !== false ||
                stripos($u['email'], $search) !== false;
@@ -150,13 +150,13 @@ $csrfToken = generateCSRFToken();
             <h1>User Management</h1>
             <button class="form-toggle-btn" onclick="openAddUserModal()">+ Add User</button>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <!-- Filters -->
         <div class="filters">
             <form method="GET" action="">
@@ -186,8 +186,8 @@ $csrfToken = generateCSRFToken();
                 <a href="/users/users.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
-        
+
+
         <!-- Users Table -->
         <div class="table-container">
             <?php if (empty($users)) : ?>
@@ -242,7 +242,7 @@ $csrfToken = generateCSRFToken();
             <?php endif; ?>
         </div>
     </main>
-    
+
     <!-- Add User Modal -->
     <div class="modal-overlay" id="addUserModal" onclick="closeAddUserModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -299,7 +299,7 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <!-- Edit User Modal -->
     <div class="modal-overlay" id="editUserModal" onclick="closeEditUserModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -357,13 +357,13 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <script>
     // Add User Modal Functions
     function openAddUserModal() {
         const modal = document.getElementById('addUserModal');
         if (!modal) return;
-        
+
         // Reset form fields
         document.getElementById('add_first_name').value = '';
         document.getElementById('add_last_name').value = '';
@@ -372,31 +372,31 @@ $csrfToken = generateCSRFToken();
         document.getElementById('add_email').value = '';
         document.getElementById('add_role').value = '';
         document.getElementById('add_status').value = 'Active';
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeAddUserModal() {
         const modal = document.getElementById('addUserModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeAddUserModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeAddUserModal();
         }
     }
-    
+
     // Edit User Modal Functions
     function openEditUserModal(user) {
         const modal = document.getElementById('editUserModal');
         if (!modal) return;
-        
+
         // Populate form fields
         document.getElementById('edit_user_id').value = user.id;
         document.getElementById('edit_first_name').value = user.first_name || '';
@@ -406,7 +406,7 @@ $csrfToken = generateCSRFToken();
         document.getElementById('edit_email').value = user.email || '';
         document.getElementById('edit_role').value = user.role || '';
         document.getElementById('edit_status').value = user.status || 'Active';
-        
+
         // Disable role/status if editing own account
         const currentUserId = <?= $currentUser['id'] ?>;
         if (user.id == currentUserId) {
@@ -416,26 +416,26 @@ $csrfToken = generateCSRFToken();
             document.getElementById('edit_role').disabled = false;
             document.getElementById('edit_status').disabled = false;
         }
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeEditUserModal() {
         const modal = document.getElementById('editUserModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeEditUserModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeEditUserModal();
         }
     }
-    
+
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
         const editButtons = document.querySelectorAll('.edit-user-btn');
@@ -453,7 +453,7 @@ $csrfToken = generateCSRFToken();
             });
         });
     });
-    
+
     // Close any modal on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -461,7 +461,7 @@ $csrfToken = generateCSRFToken();
             closeEditUserModal();
         }
     });
-    
+
     <?php if ($editingUser) : ?>
     // Auto-open edit modal if editing from URL
     document.addEventListener('DOMContentLoaded', function() {

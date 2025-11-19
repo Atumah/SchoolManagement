@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($_POST['action'] === 'edit') {
             $id = (int)$_POST['id'];
             $course = getCourseById($id);
-            if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
+            if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 $name = $_POST['name'] ?? '';
                 $description = $_POST['description'] ?? '';
                 $teacherId = (int)$_POST['teacher_id'];
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($_POST['action'] === 'delete') {
             $id = (int)$_POST['id'];
             $course = getCourseById($id);
-            if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
+            if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 deleteCourse($id);
                 setFlashMessage('success', 'Course deleted successfully');
                 header('Location: /courses/course.php');
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $studentId = (int)$_POST['student_id'];
             $course = getCourseById($courseId);
 
-            if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
+            if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 if (joinCourse($courseId, $studentId)) {
                     setFlashMessage('success', 'Student added to course successfully');
                 } else {
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $studentId = (int)$_POST['student_id'];
             $course = getCourseById($courseId);
 
-            if ($course && (hasRole('Admin') || $course['teacher_id'] == $currentUser['id'])) {
+            if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 if (leaveCourse($courseId, $studentId)) {
                     setFlashMessage('success', 'Student removed from course successfully');
                 } else {
@@ -111,18 +111,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get all courses
 $courses = getAllCourses();
-$teachers = array_filter(getAllUsers(), fn($u) => $u['role'] === 'Teacher');
-$students = array_filter(getAllUsers(), fn($u) => $u['role'] === 'Student');
+$teachers = array_filter(getAllUsers(), static fn ($u) => $u['role'] === 'Teacher');
+$students = array_filter(getAllUsers(), static fn ($u) => $u['role'] === 'Student');
 
 // Filtering
 $filterTeacher = $_GET['filter_teacher'] ?? '';
 $search = $_GET['search'] ?? '';
 
 if ($filterTeacher) {
-    $courses = array_filter($courses, fn($c) => $c['teacher_id'] == $filterTeacher);
+    $courses = array_filter($courses, static fn ($c) => $c['teacher_id'] === $filterTeacher);
 }
 if ($search) {
-    $courses = array_filter($courses, fn($c) => stripos($c['name'], $search) !== false);
+    $courses = array_filter($courses, static fn ($c) => stripos($c['name'], $search) !== false);
 }
 
 $editingId = $_GET['edit'] ?? null;
@@ -146,7 +146,7 @@ $csrfToken = generateCSRFToken();
             gap: 0.5rem;
             align-items: center;
         }
-        
+
         .actions .btn {
             height: 32px;
             padding: 0.5rem 1rem;
@@ -154,83 +154,83 @@ $csrfToken = generateCSRFToken();
             align-items: center;
             justify-content: center;
         }
-        
+
         .course-row {
             cursor: pointer;
             transition: background-color var(--transition-normal);
         }
-        
+
         .course-row:hover {
             background-color: rgba(59, 130, 246, 0.1);
         }
-        
+
         .course-row .actions {
             pointer-events: auto;
         }
-        
+
         .course-row .actions a,
         .course-row .actions form,
         .course-row .actions button {
             pointer-events: auto;
         }
-        
+
         .course-detail-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
             margin-top: 2rem;
         }
-        
+
         .course-info {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(37, 47, 69, 0.9));
             border-radius: var(--radius-lg);
             padding: 2rem;
             border: 1px solid var(--border-color);
         }
-        
+
         .course-info h2 {
             margin-top: 0;
             color: var(--text-primary);
         }
-        
+
         .info-row {
             display: flex;
             justify-content: space-between;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--border-color);
         }
-        
+
         .info-row:last-child {
             border-bottom: none;
         }
-        
+
         .info-label {
             font-weight: 600;
             color: var(--text-secondary);
         }
-        
+
         .info-value {
             color: var(--text-primary);
         }
-        
+
         .students-section {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(37, 47, 69, 0.9));
             border-radius: var(--radius-lg);
             padding: 2rem;
             border: 1px solid var(--border-color);
         }
-        
+
         .students-section h3 {
             margin-top: 0;
             color: var(--text-primary);
         }
-        
+
         .student-list {
             list-style: none;
             padding: 0;
             margin: 1rem 0;
         }
-        
+
         .student-item {
             display: flex;
             justify-content: space-between;
@@ -240,13 +240,13 @@ $csrfToken = generateCSRFToken();
             border-radius: var(--radius-sm);
             margin-bottom: 0.5rem;
         }
-        
+
         .add-student-form {
             margin-top: 1.5rem;
             padding-top: 1.5rem;
             border-top: 1px solid var(--border-color);
         }
-        
+
         @media (max-width: 768px) {
             .course-detail-container {
                 grid-template-columns: 1fr;
@@ -264,13 +264,13 @@ $csrfToken = generateCSRFToken();
                 <button type="button" class="form-toggle-btn" onclick="openAddCourseModal()">+ Add Course</button>
             <?php endif; ?>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <?php if ($viewingCourse) : ?>
             <!-- Course Detail View -->
             <div class="course-detail-container">
@@ -292,9 +292,9 @@ $csrfToken = generateCSRFToken();
                         <span class="info-label">Enrollment:</span>
                         <span class="info-value"><?= count($viewingCourse['students']) ?> / <?= $viewingCourse['max_students'] ?></span>
                     </div>
-                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
+                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] === $currentUser['id']) : ?>
                         <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
-                            <button type="button" class="btn btn-secondary edit-course-btn" 
+                            <button type="button" class="btn btn-secondary edit-course-btn"
                                     style="height: 38px; display: inline-flex; align-items: center;"
                                     data-course='<?= htmlspecialchars(json_encode($viewingCourse), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
                             <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this course? This will remove all enrollments.');">
@@ -306,7 +306,7 @@ $csrfToken = generateCSRFToken();
                         </div>
                     <?php endif; ?>
                 </div>
-                
+
                 <div class="students-section">
                     <h3>Enrolled Students</h3>
                     <?php if (empty($viewingCourse['students'])) : ?>
@@ -318,7 +318,7 @@ $csrfToken = generateCSRFToken();
                                 <?php if ($student) : ?>
                                     <li class="student-item">
                                         <span><?= htmlspecialchars($student['name']) ?></span>
-                                        <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
+                                        <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] === $currentUser['id']) : ?>
                                             <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Remove this student from the course?');">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="action" value="remove_student">
@@ -332,11 +332,11 @@ $csrfToken = generateCSRFToken();
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
-                    
-                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] == $currentUser['id']) : ?>
+
+                    <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] === $currentUser['id']) : ?>
                         <?php
                         $enrolledStudentIds = $viewingCourse['students'];
-                        $availableStudents = array_filter($students, fn($s) => !in_array($s['id'], $enrolledStudentIds));
+                        $availableStudents = array_filter($students, static fn ($s) => !in_array($s['id'], $enrolledStudentIds, true));
                         ?>
                         <?php if (count($viewingCourse['students']) < $viewingCourse['max_students'] && !empty($availableStudents)) : ?>
                             <div class="add-student-form">
@@ -350,7 +350,7 @@ $csrfToken = generateCSRFToken();
                     <?php endif; ?>
                 </div>
             </div>
-            
+
             <div style="margin-top: 2rem;">
                 <a href="/courses/course.php" class="btn btn-secondary">Back to Courses List</a>
             </div>
@@ -364,7 +364,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_teacher" name="filter_teacher">
                         <option value="">All Teachers</option>
                         <?php foreach ($teachers as $teacher) : ?>
-                            <option value="<?= $teacher['id'] ?>" <?= $filterTeacher == $teacher['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $teacher['id'] ?>" <?= $filterTeacher === $teacher['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($teacher['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -378,8 +378,8 @@ $csrfToken = generateCSRFToken();
                 <a href="/courses/course.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
-        
+
+
         <!-- Courses Table -->
         <div class="table-container">
             <?php if (empty($courses)) : ?>
@@ -412,8 +412,8 @@ $csrfToken = generateCSRFToken();
                                 <td><?= htmlspecialchars($course['schedule']) ?></td>
                                 <td>
                                     <div class="actions" onclick="event.stopPropagation();">
-                                        <?php if (hasRole('Admin') || $course['teacher_id'] == $currentUser['id']) : ?>
-                                            <button type="button" class="btn btn-secondary btn-small edit-course-btn" 
+                                        <?php if (hasRole('Admin') || $course['teacher_id'] === $currentUser['id']) : ?>
+                                            <button type="button" class="btn btn-secondary btn-small edit-course-btn"
                                                     data-course='<?= htmlspecialchars(json_encode($course), ENT_QUOTES, 'UTF-8') ?>'
                                                     onclick="event.stopPropagation();">Edit</button>
                                             <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this course? This will remove all enrollments.');" onclick="event.stopPropagation();">
@@ -433,7 +433,7 @@ $csrfToken = generateCSRFToken();
         </div>
         <?php endif; ?>
     </main>
-    
+
     <!-- Edit Course Modal -->
     <?php if (hasAnyRole(['Admin', 'Teacher'])) : ?>
     <div class="modal-overlay" id="editCourseModal" onclick="closeEditModalOnOverlay(event)">
@@ -480,7 +480,7 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <!-- Add Course Modal -->
     <div class="modal-overlay" id="addCourseModal" onclick="closeAddCourseModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -525,7 +525,7 @@ $csrfToken = generateCSRFToken();
             </form>
         </div>
     </div>
-    
+
     <!-- Add Student Modal -->
     <div class="modal-overlay" id="addStudentModal" onclick="closeAddStudentModalOnOverlay(event)">
         <div class="modal-dialog" onclick="event.stopPropagation();">
@@ -553,13 +553,13 @@ $csrfToken = generateCSRFToken();
         </div>
     </div>
     <?php endif; ?>
-    
+
     <script>
     // Edit Course Modal Functions
     function openEditModal(course) {
         const modal = document.getElementById('editCourseModal');
         if (!modal) return;
-        
+
         // Populate form fields
         document.getElementById('edit_course_id').value = course.id;
         document.getElementById('edit_name').value = course.name || '';
@@ -567,69 +567,69 @@ $csrfToken = generateCSRFToken();
         document.getElementById('edit_teacher_id').value = course.teacher_id || '';
         document.getElementById('edit_schedule').value = course.schedule || '';
         document.getElementById('edit_max_students').value = course.max_students || '30';
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeEditModal() {
         const modal = document.getElementById('editCourseModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeEditModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeEditModal();
         }
     }
-    
+
     // Add Course Modal Functions
     function openAddCourseModal() {
         const modal = document.getElementById('addCourseModal');
         if (!modal) return;
-        
+
         // Reset form fields
         document.getElementById('add_name').value = '';
         document.getElementById('add_description').value = '';
         document.getElementById('add_teacher_id').value = '';
         document.getElementById('add_schedule').value = '';
         document.getElementById('add_max_students').value = '30';
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeAddCourseModal() {
         const modal = document.getElementById('addCourseModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeAddCourseModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeAddCourseModal();
         }
     }
-    
+
     // Add Student Modal Functions
     function openAddStudentModal(courseId, availableStudents) {
         const modal = document.getElementById('addStudentModal');
         if (!modal) return;
-        
+
         // Set course ID
         document.getElementById('add_student_course_id').value = courseId;
-        
+
         // Populate student dropdown
         const studentSelect = document.getElementById('add_student_id');
         studentSelect.innerHTML = '<option value="">Select Student</option>';
-        
+
         if (availableStudents && Array.isArray(availableStudents)) {
             availableStudents.forEach(student => {
                 const option = document.createElement('option');
@@ -638,26 +638,26 @@ $csrfToken = generateCSRFToken();
                 studentSelect.appendChild(option);
             });
         }
-        
+
         // Show modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeAddStudentModal() {
         const modal = document.getElementById('addStudentModal');
         if (!modal) return;
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
+
     function closeAddStudentModalOnOverlay(event) {
         if (event.target === event.currentTarget) {
             closeAddStudentModal();
         }
     }
-    
+
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
         const editButtons = document.querySelectorAll('.edit-course-btn');
@@ -675,7 +675,7 @@ $csrfToken = generateCSRFToken();
             });
         });
     });
-    
+
     // Close any modal on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {

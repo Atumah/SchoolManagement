@@ -68,13 +68,13 @@ $csrfToken = generateCSRFToken();
         <div class="page-header">
             <h1>Appointments</h1>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <div class="card">
             <p>Appointments page - Coming soon</p>
         </div>

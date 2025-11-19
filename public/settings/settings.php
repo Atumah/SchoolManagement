@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             $maxSize = 5 * 1024 * 1024; // 5MB
 
-            if (!in_array($file['type'], $allowedTypes)) {
+            if (!in_array($file['type'], $allowedTypes, true)) {
                 setFlashMessage('error', 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
                 header('Location: /settings/settings.php?tab=profile');
                 exit;
@@ -289,7 +289,7 @@ if ($currentUser && isset($currentUser['id'])) {
 }
 
 $csrfToken = generateCSRFToken();
-$showVerify = isset($_GET['verify']) && $_GET['verify'] == '1';
+$showVerify = isset($_GET['verify']) && $_GET['verify'] === '1';
 $twofaSecret = $currentUser['twofa_secret'] ?? null;
 $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_enabled'] === true || $currentUser['twofa_enabled'] === 1);
 ?>
@@ -307,14 +307,14 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             max-width: 900px;
             margin: 0 auto;
         }
-        
+
         .settings-tabs {
             display: flex;
             gap: 1rem;
             border-bottom: 2px solid var(--border-color);
             margin-bottom: 2rem;
         }
-        
+
         .settings-tab {
             padding: 1rem 1.5rem;
             background: none;
@@ -328,30 +328,30 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .settings-tab:hover {
             color: var(--text-primary);
             background: rgba(59, 130, 246, 0.1);
         }
-        
+
         .settings-tab.active {
             color: var(--primary-lighter);
             border-bottom-color: var(--primary-light);
         }
-        
+
         .settings-tab-content {
             display: none;
             opacity: 0;
             transform: translateY(10px);
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        
+
         .settings-tab-content.active {
             display: block;
             opacity: 1;
             transform: translateY(0);
         }
-        
+
         @keyframes fadeInSlide {
             from {
                 opacity: 0;
@@ -362,12 +362,12 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                 transform: translateY(0);
             }
         }
-        
+
         .twofa-setup {
             text-align: center;
             padding: 2rem;
         }
-        
+
         .qr-code-container {
             display: inline-block;
             padding: 1.5rem;
@@ -376,18 +376,18 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             margin: 1.5rem 0;
             box-shadow: var(--shadow-lg);
         }
-        
+
         .qr-code-container img {
             display: block;
             max-width: 300px;
             height: auto;
         }
-        
+
         .verification-code-input {
             max-width: 300px;
             margin: 2rem auto;
         }
-        
+
         .verification-code-input input {
             text-align: center;
             font-size: 1.5rem;
@@ -395,7 +395,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             font-family: 'Courier New', monospace;
             padding: 1rem;
         }
-        
+
         .twofa-status {
             display: flex;
             align-items: center;
@@ -406,17 +406,17 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             border: 1px solid var(--border-color);
             margin-bottom: 2rem;
         }
-        
+
         .twofa-status-info h3 {
             margin: 0 0 0.5rem 0;
             color: var(--text-primary);
         }
-        
+
         .twofa-status-info p {
             margin: 0;
             color: var(--text-muted);
         }
-        
+
         .status-badge {
             padding: 0.5rem 1rem;
             border-radius: 50px;
@@ -425,19 +425,19 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .status-badge.enabled {
             background: rgba(16, 185, 129, 0.2);
             color: #10b981;
             border: 1px solid rgba(16, 185, 129, 0.4);
         }
-        
+
         .status-badge.disabled {
             background: rgba(239, 68, 68, 0.2);
             color: #ef4444;
             border: 1px solid rgba(239, 68, 68, 0.4);
         }
-        
+
         .instructions {
             background: rgba(59, 130, 246, 0.1);
             border-left: 4px solid var(--primary-light);
@@ -445,27 +445,27 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             border-radius: var(--radius-md);
             margin: 1.5rem 0;
         }
-        
+
         .instructions h4 {
             margin-top: 0;
             color: var(--primary-lighter);
         }
-        
+
         .instructions ol {
             margin: 1rem 0 0 0;
             padding-left: 1.5rem;
             color: var(--text-secondary);
         }
-        
+
         .instructions li {
             margin-bottom: 0.5rem;
         }
-        
+
         /* Profile Tab Styles */
         .profile-form {
             max-width: 800px;
         }
-        
+
         .profile-picture-section {
             display: flex;
             align-items: flex-start;
@@ -474,11 +474,11 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             padding-bottom: 2rem;
             border-bottom: 1px solid var(--border-color);
         }
-        
+
         .profile-picture-container {
             flex-shrink: 0;
         }
-        
+
         .profile-picture-preview,
         .profile-picture-placeholder {
             width: 150px;
@@ -488,7 +488,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             border: 3px solid var(--primary-light);
             box-shadow: var(--shadow-lg);
         }
-        
+
         .profile-picture-placeholder {
             display: flex;
             align-items: center;
@@ -496,59 +496,59 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
             border: 3px solid var(--primary-light);
         }
-        
+
         .placeholder-icon {
             font-size: 4rem;
             opacity: 0.7;
         }
-        
+
         .profile-picture-section .form-group {
             flex: 1;
         }
-        
+
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .form-group {
             margin-bottom: 0;
         }
-        
+
         .form-group input[disabled] {
             background: rgba(30, 41, 59, 0.5);
             color: var(--text-muted);
             cursor: not-allowed;
             border-color: var(--border-color);
         }
-        
+
         .form-group small {
             display: block;
             margin-top: 0.5rem;
             color: var(--text-muted);
             font-size: 0.85rem;
         }
-        
+
         .password-section {
             margin-top: 2rem;
             padding-top: 2rem;
             border-top: 1px solid var(--border-color);
         }
-        
+
         .password-section h3 {
             margin-top: 0;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
         }
-        
+
         .form-help {
             color: var(--text-muted);
             font-size: 0.9rem;
             margin-bottom: 1.5rem;
         }
-        
+
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -564,13 +564,13 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
         <div class="page-header">
             <h1>Settings</h1>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <div class="settings-container">
             <div class="settings-tabs">
                 <button class="settings-tab <?= $activeTab === 'profile' ? 'active' : '' ?>" onclick="switchTab('profile')">
@@ -580,22 +580,22 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                     Two-Factor Authentication
                 </button>
             </div>
-            
+
             <!-- Profile Tab -->
             <div class="settings-tab-content <?= $activeTab === 'profile' ? 'active' : '' ?>" id="tab-profile">
                 <div class="card">
                     <h2>Profile Information</h2>
-                    
+
                     <form method="POST" action="" enctype="multipart/form-data" class="profile-form">
                         <input type="hidden" name="action" value="update_profile">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        
+
                         <div class="profile-picture-section">
                             <div class="profile-picture-container">
                                 <?php
                                 $profilePic = $currentUser['profile_picture'] ?? null;
-                                if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)) :
-                                    ?>
+if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)) :
+    ?>
                                     <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile Picture" class="profile-picture-preview" id="profile-preview">
                                 <?php else : ?>
                                     <div class="profile-picture-placeholder" id="profile-preview">
@@ -609,56 +609,56 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                 <small>Upload a JPEG, PNG, GIF, or WebP image (max 5MB)</small>
                             </div>
                         </div>
-                        
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="first_name">First Name</label>
                                 <input type="text" id="first_name" name="first_name" value="<?= htmlspecialchars($currentUser['first_name'] ?? '') ?>" required>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="last_name">Last Name</label>
                                 <input type="text" id="last_name" name="last_name" value="<?= htmlspecialchars($currentUser['last_name'] ?? '') ?>" required>
                             </div>
                         </div>
-                        
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="email-display">Email</label>
                                 <input type="text" id="email-display" value="<?= htmlspecialchars($currentUser['email']) ?>" disabled>
                                 <small>Email cannot be changed</small>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="role-display">Role</label>
                                 <input type="text" id="role-display" value="<?= htmlspecialchars($currentUser['role']) ?>" disabled>
                                 <small>Role cannot be changed</small>
                             </div>
                         </div>
-                        
+
                         <div class="password-section">
                             <h3>Change Password</h3>
                             <p class="form-help">Leave blank if you don't want to change your password</p>
-                            
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="password">New Password</label>
                                     <input type="password" id="password" name="password" minlength="6" pattern=".*[0-9].*" placeholder="At least 6 chars & 1 number">
                                     <small>Must be at least 6 characters with 1 number</small>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="confirm_password">Confirm New Password</label>
                                     <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password">
                                 </div>
                             </div>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-primary">Update Profile</button>
                     </form>
                 </div>
             </div>
-            
+
             <!-- 2FA Tab -->
             <div class="settings-tab-content <?= $activeTab === '2fa' ? 'active' : '' ?>" id="tab-2fa">
                 <div class="twofa-status">
@@ -670,24 +670,24 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                         <?= $twofaEnabled ? 'Enabled' : 'Disabled' ?>
                     </span>
                 </div>
-                
+
                 <?php if ($twofaEnabled) : ?>
                     <!-- 2FA Enabled State -->
                     <div class="card">
                         <h2>2FA is Active</h2>
                         <p>Your account is protected with two-factor authentication. You'll be required to enter a code from your authenticator app when logging in.</p>
-                        
+
                         <form method="POST" action="" style="margin-top: 2rem;">
                             <input type="hidden" name="action" value="disable_2fa">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                            
+
                             <div class="form-group" style="max-width: 400px; margin-bottom: 1.5rem;">
                                 <label for="disable_2fa_password">Enter your password to disable 2FA</label>
-                                <input 
-                                    type="password" 
-                                    id="disable_2fa_password" 
-                                    name="password" 
-                                    required 
+                                <input
+                                    type="password"
+                                    id="disable_2fa_password"
+                                    name="password"
+                                    required
                                     autocomplete="current-password"
                                     placeholder="Enter your password"
                                     style="width: 100%;"
@@ -696,7 +696,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                     For security reasons, you must verify your password to disable 2FA.
                                 </small>
                             </div>
-                            
+
                             <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to disable 2FA? This will make your account less secure.')">
                                 Disable 2FA
                             </button>
@@ -720,19 +720,19 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                         <div class="card">
                             <h2>Verify 2FA Setup</h2>
                             <p>Scan the QR code with your authenticator app, then enter the 6-digit code to complete setup.</p>
-                            
+
                             <div class="twofa-setup">
                                 <div class="qr-code-container">
                                     <?php
-                                    $qrUrl = generateQRCodeURL($twofaSecret, $currentUser['email']);
-                                    ?>
+    $qrUrl = generateQRCodeURL($twofaSecret, $currentUser['email']);
+                        ?>
                                     <img src="<?= htmlspecialchars($qrUrl) ?>" alt="2FA QR Code" style="max-width: 100%; height: auto; display: block; border: 2px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-md);">
                                 </div>
-                                
+
                                 <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: var(--radius-md); border-left: 4px solid var(--primary-light);">
                                     <p style="margin: 0; color: var(--text-secondary);"><strong>Can't scan?</strong> Enter this code manually: <code style="background: rgba(0,0,0,0.3); padding: 0.25rem 0.5rem; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--primary-lighter);"><?= htmlspecialchars($twofaSecret) ?></code></p>
                                 </div>
-                            
+
                             <div class="instructions">
                                 <h4>Setup Instructions:</h4>
                                 <ol>
@@ -741,19 +741,19 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                     <li>Enter the 6-digit code shown in your app below</li>
                                 </ol>
                             </div>
-                            
+
                             <form method="POST" action="" class="verification-code-input">
                                 <input type="hidden" name="action" value="verify_2fa">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                
+
                                 <div class="form-group">
                                     <label for="verify-code">Enter Verification Code</label>
-                                    <input 
-                                        type="text" 
-                                        id="verify-code" 
-                                        name="code" 
-                                        required 
-                                        maxlength="6" 
+                                    <input
+                                        type="text"
+                                        id="verify-code"
+                                        name="code"
+                                        required
+                                        maxlength="6"
                                         pattern="[0-9]{6}"
                                         placeholder="000000"
                                         autocomplete="off"
@@ -762,7 +762,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                     >
                                     <small>Enter the 6-digit code from your authenticator app</small>
                                 </div>
-                                
+
                                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
                                     Verify and Enable 2FA
                                 </button>
@@ -775,7 +775,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                     <div class="card">
                         <h2>Enable Two-Factor Authentication</h2>
                         <p>Protect your account by requiring a code from your mobile device in addition to your password.</p>
-                        
+
                         <div class="instructions">
                             <h4>How it works:</h4>
                             <ol>
@@ -785,7 +785,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                                 <li>You'll be asked for a code every time you log in</li>
                             </ol>
                         </div>
-                        
+
                         <form method="POST" action="" style="margin-top: 2rem;">
                             <input type="hidden" name="action" value="enable_2fa">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -798,42 +798,42 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             </div>
         </div>
     </main>
-    
+
     <script>
     function switchTab(tab) {
         // Update URL
         const newUrl = window.location.pathname + '?tab=' + tab;
         window.history.pushState({}, '', newUrl);
-        
+
         // Get current active content
         const currentActiveContent = document.querySelector('.settings-tab-content.active');
         const newActiveContent = document.getElementById('tab-' + tab);
-        
+
         // If switching to the same tab, do nothing
         if (currentActiveContent === newActiveContent) {
             return;
         }
-        
+
         // Update active tab buttons
         document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
         event.target.classList.add('active');
-        
+
         // Fade out current content, then fade in new content
         if (currentActiveContent) {
             currentActiveContent.style.opacity = '0';
             currentActiveContent.style.transform = 'translateY(-10px)';
-            
+
             setTimeout(() => {
                 currentActiveContent.classList.remove('active');
                 currentActiveContent.style.display = 'none';
-                
+
                 // Show and animate new content
                 newActiveContent.style.display = 'block';
                 newActiveContent.classList.add('active');
-                
+
                 // Force reflow to ensure display change is applied
                 newActiveContent.offsetHeight;
-                
+
                 // Trigger animation
                 setTimeout(() => {
                     newActiveContent.style.opacity = '1';
@@ -850,7 +850,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             }, 10);
         }
     }
-    
+
     // Auto-format verification code input
     const verifyCodeInput = document.getElementById('verify-code');
     if (verifyCodeInput) {
@@ -860,7 +860,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
                 this.form.submit();
             }
         });
-        
+
         verifyCodeInput.addEventListener('paste', function(e) {
             e.preventDefault();
             const pasted = (e.clipboardData || window.clipboardData).getData('text');
@@ -871,7 +871,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             }
         });
     }
-    
+
     // Profile picture preview
     function previewProfilePicture(input) {
         if (input.files && input.files[0]) {
@@ -893,7 +893,7 @@ $twofaEnabled = isset($currentUser['twofa_enabled']) && ($currentUser['twofa_ena
             reader.readAsDataURL(input.files[0]);
         }
     }
-    
+
     // Initialize active tab on page load
     document.addEventListener('DOMContentLoaded', function() {
         const activeContent = document.querySelector('.settings-tab-content.active');

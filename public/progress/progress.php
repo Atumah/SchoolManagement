@@ -101,16 +101,16 @@ $filterStatus = $_GET['filter_status'] ?? '';
 $search = $_GET['search'] ?? '';
 
 if ($filterStudent) {
-    $progressEntries = array_filter($progressEntries, fn($p) => $p['student_id'] == $filterStudent);
+    $progressEntries = array_filter($progressEntries, static fn ($p) => $p['student_id'] === $filterStudent);
 }
 if ($filterCourse) {
-    $progressEntries = array_filter($progressEntries, fn($p) => $p['course_id'] == $filterCourse);
+    $progressEntries = array_filter($progressEntries, static fn ($p) => $p['course_id'] === $filterCourse);
 }
 if ($filterStatus) {
-    $progressEntries = array_filter($progressEntries, fn($p) => $p['status'] === $filterStatus);
+    $progressEntries = array_filter($progressEntries, static fn ($p) => $p['status'] === $filterStatus);
 }
 if ($search) {
-    $progressEntries = array_filter($progressEntries, function ($p) use ($search) {
+    $progressEntries = array_filter($progressEntries, static function ($p) use ($search) {
         return stripos($p['notes'], $search) !== false;
     });
 }
@@ -137,13 +137,13 @@ $csrfToken = generateCSRFToken();
             <h1>Student Progress</h1>
             <button class="form-toggle-btn" onclick="showAddForm()">+ Add Progress</button>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <!-- Filters -->
         <div class="filters">
             <form method="GET" action="">
@@ -152,7 +152,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_student" name="filter_student">
                         <option value="">All Students</option>
                         <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $student['id'] ?>" <?= $filterStudent === $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -163,7 +163,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_course" name="filter_course">
                         <option value="">All Courses</option>
                         <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $course['id'] ?>" <?= $filterCourse === $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -187,7 +187,7 @@ $csrfToken = generateCSRFToken();
                 <a href="/progress/progress.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
+
         <!-- Add/Edit Form -->
         <div class="form-container" id="progress-form" style="display: none;">
             <h2><?= $editingProgress ? 'Edit Progress Entry' : 'Add Progress Entry' ?></h2>
@@ -202,7 +202,7 @@ $csrfToken = generateCSRFToken();
                     <select id="student_id" name="student_id" required>
                         <option value="">Select Student</option>
                         <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $editingProgress && $editingProgress['student_id'] == $student['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $student['id'] ?>" <?= $editingProgress && $editingProgress['student_id'] === $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -213,7 +213,7 @@ $csrfToken = generateCSRFToken();
                     <select id="course_id" name="course_id" required>
                         <option value="">Select Course</option>
                         <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $editingProgress && $editingProgress['course_id'] == $course['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $course['id'] ?>" <?= $editingProgress && $editingProgress['course_id'] === $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -240,7 +240,7 @@ $csrfToken = generateCSRFToken();
                 <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
             </form>
         </div>
-        
+
         <!-- Progress Table -->
         <div class="table-container">
             <?php if (empty($progressEntries)) : ?>
@@ -294,18 +294,18 @@ $csrfToken = generateCSRFToken();
             <?php endif; ?>
         </div>
     </main>
-    
+
     <script>
     function showAddForm() {
         document.getElementById('progress-form').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    
+
     function hideAddForm() {
         document.getElementById('progress-form').style.display = 'none';
         window.location.href = '/progress/progress.php';
     }
-    
+
     <?php if ($editingProgress) : ?>
     showAddForm();
     <?php endif; ?>

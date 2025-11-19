@@ -13,7 +13,7 @@ final class Env
     {
         $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
 
-        if (is_string($value) && $value !== '') {
+        if (\is_string($value) && $value !== '') {
             return $value;
         }
 
@@ -21,7 +21,7 @@ final class Env
             return $default;
         }
 
-        throw new \RuntimeException(sprintf('Environment variable "%s" is not set.', $key));
+        throw new \RuntimeException(\sprintf('Environment variable "%s" is not set.', $key));
     }
 
     /**
@@ -35,8 +35,8 @@ final class Env
             return $default;
         }
 
-        if (!is_string($value) || !is_numeric($value)) {
-            throw new \RuntimeException(sprintf('Environment variable "%s" must be numeric.', $key));
+        if (!\is_string($value) || !is_numeric($value)) {
+            throw new \RuntimeException(\sprintf('Environment variable "%s" must be numeric.', $key));
         }
 
         return (int) $value;

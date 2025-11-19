@@ -65,7 +65,7 @@ $userCourseIds = array_column($userCourses, 'id');
 $csrfToken = generateCSRFToken();
 $search = $_GET['search'] ?? '';
 if ($search) {
-    $allCourses = array_filter($allCourses, function ($course) use ($search) {
+    $allCourses = array_filter($allCourses, static function ($course) use ($search) {
         return stripos($course['name'], $search) !== false ||
                stripos($course['description'], $search) !== false;
     });
@@ -88,13 +88,13 @@ if ($search) {
         <div class="page-header">
             <h1>Join Course</h1>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <!-- Search -->
         <div class="filters">
             <form method="GET" action="">
@@ -106,7 +106,7 @@ if ($search) {
                 <a href="/courses/join.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
+
         <!-- Courses List -->
         <?php if (empty($allCourses)) : ?>
             <div class="empty-state">
@@ -140,7 +140,7 @@ if ($search) {
                             <p><strong>Schedule:</strong> <?= htmlspecialchars($course['schedule']) ?></p>
                             <p><strong>Enrollment:</strong> <?= $enrolledCount ?> / <?= $course['max_students'] ?> students</p>
                         </div>
-                        
+
                         <div style="margin-top: 1rem;">
                             <?php if ($isEnrolled) : ?>
                                 <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to leave this course?');">

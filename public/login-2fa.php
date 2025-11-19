@@ -96,22 +96,22 @@ $csrfToken = generateCSRFToken();
                         <h1>Two-Factor Authentication</h1>
                         <p>Enter the code from your authenticator app</p>
                     </div>
-                    
+
                     <?php if ($error) : ?>
                         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
-                    
+
                     <form method="POST" action="" class="auth-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        
+
                         <div class="form-group">
                             <label for="2fa-code">Verification Code</label>
-                            <input 
-                                type="text" 
-                                id="2fa-code" 
-                                name="code" 
-                                required 
-                                maxlength="6" 
+                            <input
+                                type="text"
+                                id="2fa-code"
+                                name="code"
+                                required
+                                maxlength="6"
                                 pattern="[0-9]{6}"
                                 placeholder="000000"
                                 autocomplete="off"
@@ -120,10 +120,10 @@ $csrfToken = generateCSRFToken();
                             >
                             <small>Enter the 6-digit code from your authenticator app</small>
                         </div>
-                        
+
                         <button type="submit" class="auth-btn">Verify</button>
                     </form>
-                    
+
                     <div style="text-align: center; margin-top: 1.5rem;">
                         <a href="/logout.php" style="color: var(--text-muted); font-size: 0.9rem;">Cancel and return to login</a>
                     </div>
@@ -131,7 +131,7 @@ $csrfToken = generateCSRFToken();
             </div>
         </div>
     </div>
-    
+
     <script>
     // Auto-format and auto-submit verification code
     const codeInput = document.getElementById('2fa-code');
@@ -142,7 +142,7 @@ $csrfToken = generateCSRFToken();
                 this.form.submit();
             }
         });
-        
+
         codeInput.addEventListener('paste', function(e) {
             e.preventDefault();
             const pasted = (e.clipboardData || window.clipboardData).getData('text');

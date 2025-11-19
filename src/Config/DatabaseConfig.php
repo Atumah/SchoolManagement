@@ -34,7 +34,7 @@ final class DatabaseConfig
 
     public function dsn(): string
     {
-        return sprintf(
+        return \sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=%s',
             $this->host,
             $this->port,

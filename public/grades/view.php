@@ -101,13 +101,13 @@ $filterCourse = $_GET['filter_course'] ?? '';
 $search = $_GET['search'] ?? '';
 
 if ($filterStudent) {
-    $grades = array_filter($grades, fn($g) => $g['student_id'] == $filterStudent);
+    $grades = array_filter($grades, static fn ($g) => $g['student_id'] === $filterStudent);
 }
 if ($filterCourse) {
-    $grades = array_filter($grades, fn($g) => $g['course_id'] == $filterCourse);
+    $grades = array_filter($grades, static fn ($g) => $g['course_id'] === $filterCourse);
 }
 if ($search) {
-    $grades = array_filter($grades, function ($g) use ($search) {
+    $grades = array_filter($grades, static function ($g) use ($search) {
         $student = getUserById($g['student_id']);
         $course = getCourseById($g['course_id']);
         return stripos($student['name'] ?? '', $search) !== false ||
@@ -137,13 +137,13 @@ $csrfToken = generateCSRFToken();
             <h1>Grades</h1>
             <button class="form-toggle-btn" onclick="showAddForm()">+ Add Grade</button>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <!-- Filters -->
         <div class="filters">
             <form method="GET" action="">
@@ -152,7 +152,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_student" name="filter_student">
                         <option value="">All Students</option>
                         <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $student['id'] ?>" <?= $filterStudent === $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -163,7 +163,7 @@ $csrfToken = generateCSRFToken();
                     <select id="filter_course" name="filter_course">
                         <option value="">All Courses</option>
                         <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $course['id'] ?>" <?= $filterCourse === $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -177,7 +177,7 @@ $csrfToken = generateCSRFToken();
                 <a href="/grades/view.php" class="btn btn-secondary">Clear</a>
             </form>
         </div>
-        
+
         <!-- Add/Edit Form -->
         <div class="form-container" id="grade-form" style="display: none;">
             <h2><?= $editingGrade ? 'Edit Grade' : 'Add Grade' ?></h2>
@@ -192,7 +192,7 @@ $csrfToken = generateCSRFToken();
                     <select id="student_id" name="student_id" required>
                         <option value="">Select Student</option>
                         <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $editingGrade && $editingGrade['student_id'] == $student['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $student['id'] ?>" <?= $editingGrade && $editingGrade['student_id'] === $student['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -203,7 +203,7 @@ $csrfToken = generateCSRFToken();
                     <select id="course_id" name="course_id" required>
                         <option value="">Select Course</option>
                         <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $editingGrade && $editingGrade['course_id'] == $course['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $course['id'] ?>" <?= $editingGrade && $editingGrade['course_id'] === $course['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -225,7 +225,7 @@ $csrfToken = generateCSRFToken();
                 <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
             </form>
         </div>
-        
+
         <!-- Grades Table -->
         <div class="table-container">
             <?php if (empty($grades)) : ?>
@@ -274,18 +274,18 @@ $csrfToken = generateCSRFToken();
             <?php endif; ?>
         </div>
     </main>
-    
+
     <script>
     function showAddForm() {
         document.getElementById('grade-form').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    
+
     function hideAddForm() {
         document.getElementById('grade-form').style.display = 'none';
         window.location.href = '/grades/view.php';
     }
-    
+
     <?php if ($editingGrade) : ?>
     showAddForm();
     <?php endif; ?>

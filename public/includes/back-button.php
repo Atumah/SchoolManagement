@@ -49,27 +49,27 @@ if ($showBackButton) :
         $fallbackUrl = '/login.php';
     }
     // For nav bar pages opened with action parameters (like ?edit=1), go back to base page
-    elseif ($isNavBarPage && ($hasEditParam || $hasIdParam || $hasActionParam)) {
-        // Remove query parameters to go back to the base page
-        $fallbackUrl = $currentPage;
+elseif ($isNavBarPage && ($hasEditParam || $hasIdParam || $hasActionParam)) {
+    // Remove query parameters to go back to the base page
+    $fallbackUrl = $currentPage;
+}
+// For other non-nav pages, try to determine parent page from current page path
+else {
+    if (strpos($currentPage, 'courses') !== false) {
+        $fallbackUrl = '/courses/course.php';
+    } elseif (strpos($currentPage, 'grades') !== false) {
+        $fallbackUrl = '/grades/view.php';
+    } elseif (strpos($currentPage, 'progress') !== false) {
+        $fallbackUrl = '/progress/progress.php';
+    } elseif (strpos($currentPage, 'notes') !== false) {
+        $fallbackUrl = '/notes/notes.php';
+    } elseif (strpos($currentPage, 'users') !== false) {
+        $fallbackUrl = '/users/users.php';
+    } elseif (strpos($currentPage, 'settings') !== false) {
+        $fallbackUrl = '/settings/settings.php';
     }
-    // For other non-nav pages, try to determine parent page from current page path
-    else {
-        if (strpos($currentPage, 'courses') !== false) {
-            $fallbackUrl = '/courses/course.php';
-        } elseif (strpos($currentPage, 'grades') !== false) {
-            $fallbackUrl = '/grades/view.php';
-        } elseif (strpos($currentPage, 'progress') !== false) {
-            $fallbackUrl = '/progress/progress.php';
-        } elseif (strpos($currentPage, 'notes') !== false) {
-            $fallbackUrl = '/notes/notes.php';
-        } elseif (strpos($currentPage, 'users') !== false) {
-            $fallbackUrl = '/users/users.php';
-        } elseif (strpos($currentPage, 'settings') !== false) {
-            $fallbackUrl = '/settings/settings.php';
-        }
-    }
-    ?>
+}
+?>
     <div class="back-button-container">
         <button type="button" class="back-button" onclick="goBack(); return false;" title="Go back">
             <span class="back-button-icon">←</span>
@@ -154,11 +154,11 @@ body > .back-button-container {
         padding: 0.6rem 1rem;
         font-size: 0.9rem;
     }
-    
+
     .back-button-text {
         display: none; /* Hide text on mobile, show only icon */
     }
-    
+
     .back-button-icon {
         font-size: 1.4rem;
     }

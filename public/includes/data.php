@@ -398,7 +398,7 @@ function updateCourse(int $id, array $courseData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE courses 
+            UPDATE courses
             SET name = ?, description = ?, teacher_id = ?, schedule = ?, max_students = ?
             WHERE id = ?
         ');
@@ -617,7 +617,7 @@ function updateGrade(int $id, array $gradeData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE grades 
+            UPDATE grades
             SET student_id = ?, course_id = ?, grade = ?, date = ?, notes = ?
             WHERE id = ?
         ');
@@ -745,7 +745,7 @@ function updateProgress(int $id, array $progressData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE progress 
+            UPDATE progress
             SET student_id = ?, course_id = ?, notes = ?, date = ?, status = ?
             WHERE id = ?
         ');
@@ -859,7 +859,7 @@ function updateNote(int $id, array $noteData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE notes 
+            UPDATE notes
             SET title = ?, content = ?, student_id = ?, course_id = ?, tags = ?, date = ?
             WHERE id = ?
         ');
@@ -960,7 +960,7 @@ function updateAnnouncement(int $id, array $announcementData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE announcements 
+            UPDATE announcements
             SET title = ?, content = ?, is_published = ?
             WHERE id = ?
         ');
@@ -1056,7 +1056,7 @@ function updateEvent(int $id, array $eventData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE events 
+            UPDATE events
             SET title = ?, description = ?, event_date = ?, event_time = ?, location = ?
             WHERE id = ?
         ');
@@ -1129,7 +1129,7 @@ function getAppointmentsByUser(int $userId): array
 {
     try {
         $stmt = getDb()->prepare('
-            SELECT * FROM appointments 
+            SELECT * FROM appointments
             WHERE created_by_id = ? OR appointee_id = ?
             ORDER BY appointment_date ASC, appointment_time ASC
         ');
@@ -1174,7 +1174,7 @@ function updateAppointment(int $id, array $appointmentData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE appointments 
+            UPDATE appointments
             SET title = ?, description = ?, appointment_date = ?, appointment_time = ?, status = ?, appointee_id = ?
             WHERE id = ?
         ');
@@ -1318,7 +1318,7 @@ function updateAttendance(int $id, array $attendanceData): bool
 {
     try {
         $stmt = getDb()->prepare('
-            UPDATE attendance 
+            UPDATE attendance
             SET student_id = ?, course_id = ?, teacher_id = ?, date = ?, status = ?, notes = ?
             WHERE id = ?
         ');

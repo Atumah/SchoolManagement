@@ -43,13 +43,13 @@ if ($currentUser['role'] === 'Teacher') {
         <div class="page-header">
             <h1>Welcome, <?= htmlspecialchars($currentUser['name']) ?></h1>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
+
         <div class="dashboard-grid">
             <?php if ($currentUser['role'] === 'Teacher') : ?>
                 <div class="stat-card">
@@ -97,7 +97,7 @@ if ($currentUser['role'] === 'Teacher') {
                 </div>
             <?php endif; ?>
         </div>
-        
+
         <div class="card">
             <h2>Quick Actions</h2>
             <div class="quick-actions">

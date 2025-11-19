@@ -143,24 +143,24 @@ $csrfToken = generateCSRFToken();
                             <h1>Welcome Back</h1>
                             <p>Sign in to continue to Morning Star</p>
                         </div>
-                        
+
                         <?php if ($error && $activePanel === 'login') : ?>
                             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
-                        
+
                         <?php if ($success) : ?>
                             <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                         <?php endif; ?>
-                        
+
                         <form method="POST" action="?panel=login" class="auth-form">
                             <input type="hidden" name="action" value="login">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                            
+
                             <div class="form-group">
                                 <label for="login-email">Email</label>
                                 <input type="email" id="login-email" name="email" required autofocus placeholder="Enter your email">
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="login-password">Password</label>
                                 <div class="password-input-wrapper">
@@ -170,16 +170,16 @@ $csrfToken = generateCSRFToken();
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <button type="submit" class="auth-btn">Sign In</button>
                         </form>
-                        
+
                                 <a href="?panel=signup" class="switch-panel-btn">
                                     Don't have an account? Sign Up →
                                 </a>
                     </div>
                 </div>
-                
+
                 <!-- Signup Panel -->
                 <div class="auth-panel signup-panel">
                     <div class="auth-panel-content">
@@ -191,27 +191,27 @@ $csrfToken = generateCSRFToken();
                             <h1>Create Account</h1>
                             <p>Join Morning Star School today</p>
                         </div>
-                        
+
                         <?php if ($error && $activePanel === 'signup') : ?>
                             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
-                        
+
                         <form method="POST" action="?panel=signup" class="auth-form">
                             <input type="hidden" name="action" value="signup">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                            
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="signup-first-name">First Name</label>
                                     <input type="text" id="signup-first-name" name="first_name" required placeholder="First Name">
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="signup-last-name">Last Name</label>
                                     <input type="text" id="signup-last-name" name="last_name" required placeholder="Last Name">
                                 </div>
                             </div>
-                            
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="signup-password">Password</label>
@@ -223,7 +223,7 @@ $csrfToken = generateCSRFToken();
                                     </div>
                                     <small>Must be at least 6 characters with 1 number</small>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="signup-confirm-password">Confirm Password</label>
                                     <div class="password-input-wrapper">
@@ -234,15 +234,15 @@ $csrfToken = generateCSRFToken();
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="signup-email">Email</label>
                                 <input type="email" id="signup-email" name="email" required placeholder="your.email@school.com">
                             </div>
-                            
+
                             <button type="submit" class="auth-btn">Create Account</button>
                         </form>
-                        
+
                                 <a href="?panel=login" class="switch-panel-btn">
                                     ← Already have an account? Sign In
                                 </a>
@@ -251,40 +251,40 @@ $csrfToken = generateCSRFToken();
             </div>
         </div>
     </div>
-    
+
     <script>
     // UI-only JavaScript - All backend logic is handled by PHP
-    
+
     // 1. Panel animation based on PHP-determined state
     document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('panel-container');
         if (!container) return;
-        
+
         // Set initial state based on PHP-determined panel (from URL parameter)
         const urlParams = new URLSearchParams(window.location.search);
         const panel = urlParams.get('panel');
-        
+
         if (panel === 'signup') {
             container.classList.add('slide-right');
         } else {
             container.classList.remove('slide-right');
         }
-        
+
         // Smooth animation when clicking switch buttons (UI enhancement)
         document.querySelectorAll('.switch-panel-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault(); // Prevent immediate navigation
-                
+
                 const targetPanel = this.getAttribute('href');
                 const isGoingToSignup = targetPanel && targetPanel.includes('panel=signup');
-                
+
                 // Trigger smooth animation
                 if (isGoingToSignup) {
                     container.classList.add('slide-right');
                 } else {
                     container.classList.remove('slide-right');
                 }
-                
+
                 // Wait for animation to complete using transitionend event
                 const handleTransitionEnd = (event) => {
                     // Only proceed if this is the transform transition on the container
@@ -293,9 +293,9 @@ $csrfToken = generateCSRFToken();
                         window.location.href = targetPanel || '?panel=login';
                     }
                 };
-                
+
                 container.addEventListener('transitionend', handleTransitionEnd);
-                
+
                 // Fallback timeout in case transitionend doesn't fire (shouldn't happen, but safety net)
                 setTimeout(() => {
                     container.removeEventListener('transitionend', handleTransitionEnd);
@@ -303,14 +303,14 @@ $csrfToken = generateCSRFToken();
                 }, 1200); // Generous timeout as fallback
             });
         });
-        
+
         // Handle browser back/forward buttons (UI only - PHP handles actual navigation)
         window.addEventListener('popstate', function(event) {
             const urlParams = new URLSearchParams(window.location.search);
             const panel = urlParams.get('panel');
-            
+
             if (!container) return;
-            
+
             if (panel === 'signup') {
                 container.classList.add('slide-right');
             } else {
@@ -318,12 +318,12 @@ $csrfToken = generateCSRFToken();
             }
         });
     });
-    
+
     // 2. Password toggle functionality (UI only)
     function togglePassword(inputId, button) {
         const input = document.getElementById(inputId);
         const icon = button.querySelector('.password-toggle-icon');
-        
+
         if (input.type === 'password') {
             input.type = 'text';
             icon.textContent = '🙈';
@@ -334,19 +334,19 @@ $csrfToken = generateCSRFToken();
             button.setAttribute('aria-label', 'Show password');
         }
     }
-    
+
     // 3. Frontend validation (UI feedback only - backend validation in PHP)
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function(e) {
             const emailInput = form.querySelector('input[type="email"]');
             const passwordInput = form.querySelector('input[type="password"][name="password"]');
             const confirmPasswordInput = form.querySelector('input[name="confirm_password"]');
-            
+
             // Email validation (UI feedback)
             if (emailInput) {
                 const email = emailInput.value.trim();
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                
+
                 if (!emailRegex.test(email)) {
                     e.preventDefault();
                     emailInput.focus();
@@ -357,12 +357,12 @@ $csrfToken = generateCSRFToken();
                     emailInput.setCustomValidity('');
                 }
             }
-            
+
             // Password validation for signup (UI feedback)
             if (passwordInput && form.querySelector('input[name="action"][value="signup"]')) {
                 const password = passwordInput.value;
                 const passwordRegex = /^(?=.*[0-9]).{6,}$/;
-                
+
                 if (!passwordRegex.test(password)) {
                     e.preventDefault();
                     passwordInput.focus();
@@ -372,7 +372,7 @@ $csrfToken = generateCSRFToken();
                 } else {
                     passwordInput.setCustomValidity('');
                 }
-                
+
                 // Confirm password match (UI feedback)
                 if (confirmPasswordInput && password !== confirmPasswordInput.value) {
                     e.preventDefault();

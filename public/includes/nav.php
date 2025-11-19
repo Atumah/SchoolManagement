@@ -16,20 +16,20 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
             <span style="display: none;">⭐</span>
             <span>Morning Star</span>
         </a>
-        
+
         <?php if ($currentUser) : ?>
             <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
             <ul class="navbar-menu" id="navbar-menu">
                 <?php
                 $isIndexPage = strpos($currentPage, 'index.php') !== false;
-                ?>
+            ?>
                 <li><a href="/index.php" class="<?= $isIndexPage ? 'active' : '' ?>">Home</a></li>
 
                 <?php if ($currentUser['role'] === 'Teacher') : ?>
                     <!-- Content -->
                     <?php
-                    $isContentPage = strpos($currentPage, 'announcements.php') !== false
-                        || strpos($currentPage, 'events.php') !== false;
+                $isContentPage = strpos($currentPage, 'announcements.php') !== false
+                    || strpos($currentPage, 'events.php') !== false;
                     $isAnnouncementsPage = strpos($currentPage, 'announcements.php') !== false;
                     $isEventsPage = strpos($currentPage, 'events.php') !== false;
                     ?>
@@ -314,19 +314,19 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const dropdown = this.closest('.navbar-dropdown');
             const isActive = dropdown.classList.contains('active');
-            
+
             // Close all other dropdowns
             document.querySelectorAll('.navbar-dropdown').forEach(d => {
                 if (d !== dropdown) {
                     d.classList.remove('active');
                 }
             });
-            
+
             // Toggle current dropdown
             dropdown.classList.toggle('active', !isActive);
         });
     });
-    
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.navbar-dropdown')) {
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d.classList.remove('active');
             });
         }
-        
+
         // Close settings dropdown when clicking outside
         const settingsDropdown = document.querySelector('.navbar-settings-dropdown');
         if (settingsDropdown && !settingsDropdown.contains(e.target)) {
