@@ -10,8 +10,15 @@ requireAuth();
 $currentUser = getCurrentUser();
 $flash = getFlashMessage();
 
-// Handle CRUD operations
+// Handle CRUD operations (students can only view)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Students can only view, not edit
+    if ($currentUser['role'] === 'Student') {
+        setFlashMessage('error', 'You do not have permission to perform this action.');
+        header('Location: /events/events.php');
+        exit;
+    }
+
     // Verify CSRF token
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
         setFlashMessage('error', 'Invalid security token. Please try again.');

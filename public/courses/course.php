@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/data.php';
+require_once __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Support\Cuid;
+use App\Database\Database;
 
 requireAuth();
 
 $currentUser = getCurrentUser();
+// Students should use join.php instead
+if ($currentUser['role'] === 'Student') {
+    header('Location: /courses/join.php');
+    exit;
+}
+
 $flash = getFlashMessage();
 
 // Handle CRUD operations
@@ -24,52 +35,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (hasAnyRole(['Admin', 'Teacher'])) {
                 $name = $_POST['name'] ?? '';
                 $description = $_POST['description'] ?? '';
-                $teacherId = (int)$_POST['teacher_id'];
+                $teacherId = $_POST['teacher_id'];
                 $schedule = $_POST['schedule'] ?? '';
                 $maxStudents = (int)($_POST['max_students'] ?? 30);
+                $year = (int)($_POST['year'] ?? 1);
+                $credits = (int)($_POST['credits'] ?? 5);
 
                 if (empty($name) || empty($teacherId)) {
                     setFlashMessage('error', 'Course name and teacher are required');
                 } else {
-                    addCourse([
-                        'name' => $name,
-                        'description' => $description,
-                        'teacher_id' => $teacherId,
-                        'schedule' => $schedule,
-                        'max_students' => $maxStudents
-                    ]);
-                    setFlashMessage('success', 'Course added successfully');
-                    header('Location: /courses/course.php');
-                    exit;
+                    try {
+                        addCourse([
+                            'name' => $name,
+                            'description' => $description,
+                            'teacher_id' => $teacherId,
+                            'schedule' => $schedule,
+                            'max_students' => $maxStudents,
+                            'year' => $year,
+                            'credits' => $credits
+                        ]);
+                        setFlashMessage('success', 'Course added successfully');
+                        header('Location: /courses/course.php');
+                        exit;
+                    } catch (RuntimeException $e) {
+                        setFlashMessage('error', $e->getMessage());
+                    }
                 }
             }
         } elseif ($_POST['action'] === 'edit') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             $course = getCourseById($id);
             if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 $name = $_POST['name'] ?? '';
                 $description = $_POST['description'] ?? '';
-                $teacherId = (int)$_POST['teacher_id'];
+                $teacherId = $_POST['teacher_id'];
                 $schedule = $_POST['schedule'] ?? '';
                 $maxStudents = (int)$_POST['max_students'];
+                $year = (int)($_POST['year'] ?? 1);
+                $credits = (int)($_POST['credits'] ?? 5);
 
                 if ($maxStudents < count($course['students'])) {
                     setFlashMessage('error', 'Cannot reduce max students below current enrollment');
                 } else {
-                    updateCourse($id, [
-                        'name' => $name,
-                        'description' => $description,
-                        'teacher_id' => $teacherId,
-                        'schedule' => $schedule,
-                        'max_students' => $maxStudents
-                    ]);
-                    setFlashMessage('success', 'Course updated successfully');
-                    header('Location: /courses/course.php');
-                    exit;
+                    try {
+                        updateCourse($id, [
+                            'name' => $name,
+                            'description' => $description,
+                            'teacher_id' => $teacherId,
+                            'schedule' => $schedule,
+                            'max_students' => $maxStudents,
+                            'year' => $year,
+                            'credits' => $credits
+                        ]);
+                        setFlashMessage('success', 'Course updated successfully');
+                        header('Location: /courses/course.php');
+                        exit;
+                    } catch (RuntimeException $e) {
+                        setFlashMessage('error', $e->getMessage());
+                    }
                 }
             }
         } elseif ($_POST['action'] === 'delete') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             $course = getCourseById($id);
             if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
                 deleteCourse($id);
@@ -78,8 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } elseif ($_POST['action'] === 'add_student') {
-            $courseId = (int)$_POST['course_id'];
-            $studentId = (int)$_POST['student_id'];
+            $courseId = $_POST['course_id'];
+            $studentId = $_POST['student_id'];
             $course = getCourseById($courseId);
 
             if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
@@ -92,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } elseif ($_POST['action'] === 'remove_student') {
-            $courseId = (int)$_POST['course_id'];
-            $studentId = (int)$_POST['student_id'];
+            $courseId = $_POST['course_id'];
+            $studentId = $_POST['student_id'];
             $course = getCourseById($courseId);
 
             if ($course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
@@ -105,6 +132,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: /courses/course.php?view=' . $courseId);
                 exit;
             }
+        } elseif ($_POST['action'] === 'add_grade' || $_POST['action'] === 'edit_grade') {
+            // Handle grade add/edit from course grades tab
+            if (hasAnyRole(['Admin', 'Teacher'])) {
+                $courseId = $_POST['course_id'] ?? null;
+                $studentId = $_POST['student_id'] ?? null;
+                $originalGrade = isset($_POST['original_grade']) ? (float)$_POST['original_grade'] : null;
+
+                if (!$courseId || !$studentId) {
+                    setFlashMessage('error', 'Course ID and Student ID are required');
+                    header('Location: /courses/course.php?view=' . ($courseId ?? ''));
+                    exit;
+                }
+
+                $course = getCourseById($courseId);
+                if (!$course || (!hasRole('Admin') && $course['teacher_id'] !== $currentUser['id'])) {
+                    setFlashMessage('error', 'You do not have permission to grade this course');
+                    header('Location: /courses/course.php?view=' . $courseId);
+                    exit;
+                }
+
+                if ($originalGrade === null || $originalGrade < 1.0 || $originalGrade > 10.0) {
+                    setFlashMessage('error', 'Original grade must be between 1.0 and 10.0');
+                    header('Location: /courses/course.php?view=' . $courseId . '&tab=grades');
+                    exit;
+                }
+
+                try {
+                    $gradeData = [
+                        'student_id' => $studentId,
+                        'course_id' => $courseId,
+                        'teacher_id' => $currentUser['id'],
+                        'original_grade' => $originalGrade,
+                        'notes' => $_POST['notes'] ?? ''
+                    ];
+
+                    if ($_POST['action'] === 'add_grade') {
+                        // Check if grade record exists (should exist with NULL values)
+                        $allGrades = getGradesByCourse($courseId);
+                        $existingGrade = null;
+                        foreach ($allGrades as $g) {
+                            if ($g['student_id'] === $studentId) {
+                                $existingGrade = $g;
+                                break;
+                            }
+                        }
+                        if ($existingGrade) {
+                            // Update existing NULL grade record
+                            updateGrade($existingGrade['id'], $gradeData);
+                            setFlashMessage('success', 'Grade added successfully');
+                        } else {
+                            // Create new grade record
+                            addGrade($gradeData);
+                            setFlashMessage('success', 'Grade added successfully');
+                        }
+                    } else {
+                        // Edit existing grade
+                        $gradeId = $_POST['grade_id'] ?? null;
+                        if (!$gradeId) {
+                            setFlashMessage('error', 'Grade ID is required for editing');
+                            header('Location: /courses/course.php?view=' . $courseId . '&tab=grades');
+                            exit;
+                        }
+                        updateGrade($gradeId, $gradeData);
+                        setFlashMessage('success', 'Grade updated successfully');
+                    }
+                } catch (Exception $e) {
+                    setFlashMessage('error', $e->getMessage());
+                }
+
+                header('Location: /courses/course.php?view=' . $courseId . '&tab=grades');
+                exit;
+            }
+        } elseif ($_POST['action'] === 'delete_grade') {
+            // Handle grade deletion from course grades tab
+            if (hasAnyRole(['Admin', 'Teacher'])) {
+                $gradeId = $_POST['grade_id'] ?? null;
+                $courseId = $_POST['course_id'] ?? null;
+
+                if (!$gradeId || !$courseId) {
+                    setFlashMessage('error', 'Grade ID and Course ID are required');
+                    header('Location: /courses/course.php?view=' . ($courseId ?? ''));
+                    exit;
+                }
+
+                $grade = getGradeById($gradeId);
+                $course = getCourseById($courseId);
+
+                if ($grade && $course && (hasRole('Admin') || $course['teacher_id'] === $currentUser['id'])) {
+                    // Set grade to NULL instead of deleting (keep record)
+                    try {
+                        $stmt = Database::connection()->prepare('
+                            UPDATE grades
+                            SET original_grade = NULL, final_grade = NULL, date = NULL
+                            WHERE id = ?
+                        ');
+                        $stmt->execute([$gradeId]);
+                        setFlashMessage('success', 'Grade deleted successfully');
+                    } catch (Exception $e) {
+                        setFlashMessage('error', 'Failed to delete grade');
+                    }
+                }
+
+                header('Location: /courses/course.php?view=' . $courseId . '&tab=grades');
+                exit;
+            }
         }
     }
 }
@@ -112,7 +244,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get all courses
 $courses = getAllCourses();
 $teachers = array_filter(getAllUsers(), static fn ($u) => $u['role'] === 'Teacher');
-$students = array_filter(getAllUsers(), static fn ($u) => $u['role'] === 'Student');
+$students = array_values(array_filter(getAllUsers(), static fn ($u) => $u['role'] === 'Student')); // Re-index for proper array handling
+
+// Get active tab from URL (default to 'overview')
+$activeTab = $_GET['tab'] ?? 'overview';
 
 // Filtering
 $filterTeacher = $_GET['filter_teacher'] ?? '';
@@ -127,8 +262,22 @@ if ($search) {
 
 $editingId = $_GET['edit'] ?? null;
 $viewingId = $_GET['view'] ?? null;
-$editingCourse = $editingId ? getCourseById((int)$editingId) : null;
-$viewingCourse = $viewingId ? getCourseById((int)$viewingId) : null;
+$editingCourse = $editingId ? getCourseById($editingId) : null;
+$viewingCourse = $viewingId ? getCourseById($viewingId) : null;
+
+// Get grades for this course if viewing course detail
+$courseGrades = [];
+$gradesByStudentId = [];
+if ($viewingCourse) {
+    $courseGrades = getGradesByCourse($viewingCourse['id']);
+    // Create map of student_id => grade for quick lookup
+    // Note: Grade records are created automatically when students join courses via joinCourse()
+    // We don't create them here - only display existing grades
+    foreach ($courseGrades as $grade) {
+        $gradesByStudentId[$grade['student_id']] = $grade;
+    }
+}
+
 $csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
@@ -141,6 +290,16 @@ $csrfToken = generateCSRFToken();
     <link rel="stylesheet" href="/assets/styles.css">
     <link rel="stylesheet" href="/assets/nav.css">
     <link rel="stylesheet" href="/assets/components.css">
+    <script>
+    // Define switchTab function immediately in head to ensure it's available for onclick handlers
+    function switchTab(tabName) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabName);
+        window.location.href = url.toString();
+    }
+    // Also assign to window for explicit global access
+    window.switchTab = switchTab;
+    </script>
     <style>
         .actions {
             display: flex;
@@ -253,6 +412,49 @@ $csrfToken = generateCSRFToken();
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Tabs Styles */
+        .course-tabs-container {
+            margin-top: var(--spacing-lg);
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .tab-button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all var(--transition-normal);
+            margin-bottom: -2px;
+        }
+
+        .tab-button:hover {
+            color: var(--primary-lighter);
+            border-bottom-color: var(--border-color);
+        }
+
+        .tab-button.active {
+            color: var(--primary-lighter);
+            border-bottom-color: var(--primary-lighter);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -273,8 +475,17 @@ $csrfToken = generateCSRFToken();
         <?php endif; ?>
 
         <?php if ($viewingCourse) : ?>
-            <!-- Course Detail View -->
-            <div class="course-detail-container">
+            <!-- Course Detail View with Tabs -->
+            <div class="course-tabs-container">
+                <!-- Tab Navigation -->
+                <div class="tabs-nav">
+                    <button class="tab-button <?= $activeTab === 'overview' ? 'active' : '' ?>" onclick="switchTab('overview')">Overview</button>
+                    <button class="tab-button <?= $activeTab === 'grades' ? 'active' : '' ?>" onclick="switchTab('grades')">Grades</button>
+                </div>
+
+                <!-- Overview Tab Content -->
+                <div id="tab-overview" class="tab-content <?= $activeTab === 'overview' ? 'active' : '' ?>">
+                    <div class="course-detail-container">
                 <div class="course-info">
                     <h2><?= htmlspecialchars($viewingCourse['name']) ?></h2>
                     <div class="info-row">
@@ -336,12 +547,15 @@ $csrfToken = generateCSRFToken();
 
                     <?php if (hasRole('Admin') || $viewingCourse['teacher_id'] === $currentUser['id']) : ?>
                         <?php
-                        $enrolledStudentIds = $viewingCourse['students'];
+                        $enrolledStudentIds = $viewingCourse['students'] ?? [];
                         $availableStudents = array_filter($students, static fn ($s) => !in_array($s['id'], $enrolledStudentIds, true));
+                        // Re-index array to ensure proper JSON encoding
+                        $availableStudents = array_values($availableStudents);
                         ?>
-                        <?php if (count($viewingCourse['students']) < $viewingCourse['max_students'] && !empty($availableStudents)) : ?>
+                        <?php if (count($viewingCourse['students']) < $viewingCourse['max_students']) : ?>
                             <div class="add-student-form">
-                                <button type="button" class="btn btn-primary" onclick="openAddStudentModal(<?= $viewingCourse['id'] ?>, <?= htmlspecialchars(json_encode($availableStudents), ENT_QUOTES, 'UTF-8') ?>)">+ Add Student</button>
+                                <button type="button" class="btn btn-primary add-student-btn"
+                                        data-course-id="<?= htmlspecialchars($viewingCourse['id'], ENT_QUOTES, 'UTF-8') ?>">+ Add Student</button>
                             </div>
                         <?php elseif (count($viewingCourse['students']) >= $viewingCourse['max_students']) : ?>
                             <p style="color: var(--text-muted); margin-top: 1rem;">Course is full (<?= $viewingCourse['max_students'] ?> students).</p>
@@ -349,6 +563,18 @@ $csrfToken = generateCSRFToken();
                             <p style="color: var(--text-muted); margin-top: 1rem;">All students are already enrolled.</p>
                         <?php endif; ?>
                     <?php endif; ?>
+                </div>
+                    </div>
+                </div>
+
+                <!-- Grades Tab Content -->
+                <div id="tab-grades" class="tab-content <?= $activeTab === 'grades' ? 'active' : '' ?>">
+                    <?php
+                    // Include grades tab - we'll create this next
+                    $courseId = $viewingCourse['id'];
+$isTeacherOrAdmin = hasAnyRole(['Admin', 'Teacher']);
+include __DIR__ . '/course-grades-tab.php';
+?>
                 </div>
             </div>
 
@@ -401,7 +627,7 @@ $csrfToken = generateCSRFToken();
                     <tbody>
                         <?php foreach ($courses as $course) : ?>
                             <?php
-                            $teacher = getUserById($course['teacher_id']);
+        $teacher = getUserById($course['teacher_id']);
                             $enrolledCount = count($course['students']);
                             ?>
                             <tr class="course-row" onclick="window.location.href='?view=<?= $course['id'] ?>'" style="cursor: pointer;">
@@ -473,6 +699,20 @@ $csrfToken = generateCSRFToken();
                         <label for="edit_max_students">Max Students</label>
                         <input type="number" id="edit_max_students" name="max_students" min="1" required>
                     </div>
+                    <div class="form-group">
+                        <label for="edit_year">Year</label>
+                        <select id="edit_year" name="year" required onchange="updateYearInfo(this, 'edit')">
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_credits">EC Credits</label>
+                        <input type="number" id="edit_credits" name="credits" min="1" max="60" required oninput="validateECs(this, 'edit')">
+                        <small id="edit_ec_info" class="ec-info"></small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
@@ -518,10 +758,24 @@ $csrfToken = generateCSRFToken();
                         <label for="add_max_students">Max Students</label>
                         <input type="number" id="add_max_students" name="max_students" min="1" required value="30">
                     </div>
+                    <div class="form-group">
+                        <label for="add_year">Year</label>
+                        <select id="add_year" name="year" required onchange="updateYearInfo(this, 'add')">
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add_credits">EC Credits</label>
+                        <input type="number" id="add_credits" name="credits" min="1" max="60" required value="5" oninput="validateECs(this, 'add')">
+                        <small id="add_ec_info" class="ec-info"></small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeAddCourseModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Course</button>
+                    <button type="submit" class="btn btn-primary" id="add_course_submit">Add Course</button>
                 </div>
             </form>
         </div>
@@ -556,18 +810,144 @@ $csrfToken = generateCSRFToken();
     <?php endif; ?>
 
     <script>
-    // Edit Course Modal Functions
-    function openEditModal(course) {
-        const modal = document.getElementById('editCourseModal');
+    // Helper function for safe element retrieval
+    function safeGetElement(id, errorMessage = null) {
+        const el = document.getElementById(id);
+        if (!el) {
+            const msg = errorMessage || `Element not found: ${id}`;
+            console.error(msg);
+            if (errorMessage) {
+                alert(errorMessage);
+            }
+        }
+        return el;
+    }
+
+    // Define all global functions FIRST before any other code
+    // Tab switching function - ensure it's in global scope
+    // Define it both as window property and as a global function for compatibility
+    function switchTab(tabName) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabName);
+        window.location.href = url.toString();
+    }
+    // Also assign to window for explicit global access
+    window.switchTab = switchTab;
+
+    // Ensure functions are in global scope
+    window.openAddStudentModal = async function(courseId, availableStudents = null) {
+        const modal = document.getElementById('addStudentModal');
+        if (!modal) {
+            console.error('Add student modal not found');
+            alert('Error: Modal not found. Please refresh the page.');
+            return;
+        }
+
+        // Set course ID
+        const courseIdInput = document.getElementById('add_student_course_id');
+        if (courseIdInput) {
+            courseIdInput.value = courseId;
+        } else {
+            console.error('Course ID input not found');
+            alert('Error: Form element not found. Please refresh the page.');
+            return;
+        }
+
+        // Populate student dropdown
+        const studentSelect = document.getElementById('add_student_id');
+        if (!studentSelect) {
+            console.error('Student select element not found');
+            alert('Error: Form element not found. Please refresh the page.');
+            return;
+        }
+
+        // Show loading state
+        studentSelect.innerHTML = '<option value="">Loading students...</option>';
+        studentSelect.disabled = true;
+
+        // Fetch available students via AJAX if not provided
+        if (!availableStudents && courseId) {
+            try {
+                const response = await fetch(`/api/get-available-students.php?course_id=${encodeURIComponent(courseId)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                availableStudents = data.students || [];
+            } catch (e) {
+                console.error('Error fetching available students:', e);
+                studentSelect.innerHTML = '<option value="">Error loading students</option>';
+                studentSelect.disabled = false;
+                alert('Error loading available students. Please refresh the page and try again.');
+                return;
+            }
+        }
+
+        // Populate dropdown
+        studentSelect.innerHTML = '<option value="">Select Student</option>';
+        studentSelect.disabled = false;
+
+        if (availableStudents && Array.isArray(availableStudents) && availableStudents.length > 0) {
+            availableStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = student.name || (student.first_name + ' ' + student.last_name) || 'Unknown';
+                studentSelect.appendChild(option);
+            });
+        } else {
+            studentSelect.innerHTML = '<option value="">No available students</option>';
+        }
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    function closeAddStudentModal() {
+        const modal = document.getElementById('addStudentModal');
         if (!modal) return;
 
-        // Populate form fields
-        document.getElementById('edit_course_id').value = course.id;
-        document.getElementById('edit_name').value = course.name || '';
-        document.getElementById('edit_description').value = course.description || '';
-        document.getElementById('edit_teacher_id').value = course.teacher_id || '';
-        document.getElementById('edit_schedule').value = course.schedule || '';
-        document.getElementById('edit_max_students').value = course.max_students || '30';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function closeAddStudentModalOnOverlay(event) {
+        if (event.target === event.currentTarget) {
+            closeAddStudentModal();
+        }
+    }
+
+    // Edit Course Modal Functions
+    function openEditModal(course) {
+        const modal = safeGetElement('editCourseModal', 'Error: Edit modal not found. Please refresh the page.');
+        if (!modal) return;
+
+        // Populate form fields with null checks
+        const courseIdEl = safeGetElement('edit_course_id');
+        const nameEl = safeGetElement('edit_name');
+        const descEl = safeGetElement('edit_description');
+        const teacherEl = safeGetElement('edit_teacher_id');
+        const scheduleEl = safeGetElement('edit_schedule');
+        const maxStudentsEl = safeGetElement('edit_max_students');
+        const yearEl = safeGetElement('edit_year');
+        const creditsEl = safeGetElement('edit_credits');
+
+        if (courseIdEl) courseIdEl.value = course.id || '';
+        if (nameEl) nameEl.value = course.name || '';
+        if (descEl) descEl.value = course.description || '';
+        if (teacherEl) teacherEl.value = course.teacher_id || '';
+        if (scheduleEl) scheduleEl.value = course.schedule || '';
+        if (maxStudentsEl) maxStudentsEl.value = course.max_students || '30';
+        if (yearEl) yearEl.value = course.year || '1';
+        if (creditsEl) creditsEl.value = course.credits || '5';
+
+        // Update year info
+        if (yearEl) {
+            updateYearInfo(yearEl, 'edit');
+        }
 
         // Show modal
         modal.classList.add('active');
@@ -590,15 +970,32 @@ $csrfToken = generateCSRFToken();
 
     // Add Course Modal Functions
     function openAddCourseModal() {
-        const modal = document.getElementById('addCourseModal');
+        const modal = safeGetElement('addCourseModal', 'Error: Add course modal not found. Please refresh the page.');
         if (!modal) return;
 
-        // Reset form fields
-        document.getElementById('add_name').value = '';
-        document.getElementById('add_description').value = '';
-        document.getElementById('add_teacher_id').value = '';
-        document.getElementById('add_schedule').value = '';
-        document.getElementById('add_max_students').value = '30';
+        // Reset form fields with null checks
+        const nameEl = safeGetElement('add_name');
+        const descEl = safeGetElement('add_description');
+        const teacherEl = safeGetElement('add_teacher_id');
+        const scheduleEl = safeGetElement('add_schedule');
+        const maxStudentsEl = safeGetElement('add_max_students');
+        const yearEl = safeGetElement('add_year');
+        const creditsEl = safeGetElement('add_credits');
+        const ecInfoEl = safeGetElement('add_ec_info');
+
+        if (nameEl) nameEl.value = '';
+        if (descEl) descEl.value = '';
+        if (teacherEl) teacherEl.value = '';
+        if (scheduleEl) scheduleEl.value = '';
+        if (maxStudentsEl) maxStudentsEl.value = '30';
+        if (yearEl) yearEl.value = '1';
+        if (creditsEl) creditsEl.value = '5';
+        if (ecInfoEl) ecInfoEl.textContent = '';
+
+        // Update EC info for year 1
+        if (yearEl) {
+            updateYearInfo(yearEl, 'add');
+        }
 
         // Show modal
         modal.classList.add('active');
@@ -619,62 +1016,53 @@ $csrfToken = generateCSRFToken();
         }
     }
 
-    // Add Student Modal Functions
-    function openAddStudentModal(courseId, availableStudents) {
-        const modal = document.getElementById('addStudentModal');
-        if (!modal) return;
-
-        // Set course ID
-        document.getElementById('add_student_course_id').value = courseId;
-
-        // Populate student dropdown
-        const studentSelect = document.getElementById('add_student_id');
-        studentSelect.innerHTML = '<option value="">Select Student</option>';
-
-        if (availableStudents && Array.isArray(availableStudents)) {
-            availableStudents.forEach(student => {
-                const option = document.createElement('option');
-                option.value = student.id;
-                option.textContent = student.name;
-                studentSelect.appendChild(option);
-            });
-        }
-
-        // Show modal
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeAddStudentModal() {
-        const modal = document.getElementById('addStudentModal');
-        if (!modal) return;
-
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    function closeAddStudentModalOnOverlay(event) {
-        if (event.target === event.currentTarget) {
-            closeAddStudentModal();
-        }
-    }
 
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
-        const editButtons = document.querySelectorAll('.edit-course-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const courseData = this.getAttribute('data-course');
-                if (courseData) {
-                    try {
-                        const course = JSON.parse(courseData);
-                        openEditModal(course);
-                    } catch (e) {
-                        console.error('Error parsing course data:', e);
+        try {
+            const editButtons = document.querySelectorAll('.edit-course-btn');
+            if (editButtons && editButtons.length > 0) {
+                editButtons.forEach(button => {
+                    if (!button) return;
+                    button.addEventListener('click', function() {
+                        const courseData = this.getAttribute('data-course');
+                        if (courseData) {
+                            try {
+                                const course = JSON.parse(courseData);
+                                openEditModal(course);
+                            } catch (e) {
+                                console.error('Error parsing course data:', e);
+                                alert('Error loading course data. Please refresh the page and try again.');
+                            }
+                        } else {
+                            console.error('Course data attribute is missing');
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('Error attaching edit button listeners:', e);
+        }
+
+        // Attach event listeners to add student buttons
+        const addStudentButtons = document.querySelectorAll('.add-student-btn');
+        if (addStudentButtons && addStudentButtons.length > 0) {
+            addStudentButtons.forEach(button => {
+                if (!button) return;
+                button.addEventListener('click', function() {
+                    const courseId = this.getAttribute('data-course-id');
+                    if (courseId) {
+                        // Fetch students via AJAX (no need for data attribute)
+                        window.openAddStudentModal(courseId);
+                    } else {
+                        console.error('Missing course ID');
+                        alert('Error: Missing course ID. Please refresh the page and try again.');
                     }
-                }
+                });
             });
-        });
+        } else {
+            console.warn('No add student buttons found on page');
+        }
     });
 
     // Close any modal on Escape key
@@ -685,6 +1073,136 @@ $csrfToken = generateCSRFToken();
             closeAddStudentModal();
         }
     });
+
+    // EC Validation Functions
+    async function updateYearInfo(select, prefix) {
+        if (!select) {
+            console.error('updateYearInfo: select element is null');
+            return;
+        }
+        const year = parseInt(select.value);
+        if (isNaN(year) || year < 1 || year > 4) {
+            console.error('updateYearInfo: invalid year', year);
+            return;
+        }
+        const creditsInput = safeGetElement(prefix + '_credits');
+        const infoElement = safeGetElement(prefix + '_ec_info');
+        const submitButton = prefix === 'add' ? safeGetElement('add_course_submit') : document.querySelector('#editCourseForm button[type="submit"]');
+
+        if (!creditsInput || !infoElement) {
+            console.error('updateYearInfo: required elements not found');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/get-year-credits.php?year=${year}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            const totalCredits = data.total || 0;
+            const remaining = 60 - totalCredits;
+
+            if (prefix === 'edit') {
+                // For edit, need to subtract current course's credits
+                const currentCredits = parseInt(creditsInput.value) || 0;
+                // We'll calculate this in validateECs
+            }
+
+            infoElement.textContent = `Total ECs in Year ${year}: ${totalCredits}/60. Remaining: ${remaining} ECs`;
+
+            if (remaining <= 0) {
+                infoElement.style.color = 'var(--accent-danger)';
+                if (submitButton) submitButton.disabled = true;
+            } else {
+                infoElement.style.color = 'var(--text-secondary)';
+                if (submitButton) submitButton.disabled = false;
+            }
+
+            // Validate current input
+            validateECs(creditsInput, prefix);
+        } catch (error) {
+            console.error('Error fetching year credits:', error);
+            if (infoElement) {
+                infoElement.textContent = 'Error loading year information. Please try again.';
+                infoElement.style.color = 'var(--accent-danger)';
+            }
+        }
+    }
+
+    async function validateECs(input, prefix) {
+        if (!input) {
+            console.error('validateECs: input element is null');
+            return;
+        }
+        const yearEl = safeGetElement(prefix + '_year');
+        if (!yearEl) {
+            console.error('validateECs: year element not found');
+            return;
+        }
+        const year = parseInt(yearEl.value);
+        if (isNaN(year) || year < 1 || year > 4) {
+            console.error('validateECs: invalid year', year);
+            return;
+        }
+        const credits = parseInt(input.value) || 0;
+        const infoElement = safeGetElement(prefix + '_ec_info');
+        const submitButton = prefix === 'add' ? safeGetElement('add_course_submit') : document.querySelector('#editCourseForm button[type="submit"]');
+
+        if (!infoElement) {
+            console.error('validateECs: info element not found');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/get-year-credits.php?year=${year}`);
+            const data = await response.json();
+            let totalCredits = data.total || 0;
+
+            // For edit, subtract current course's credits if editing
+            if (prefix === 'edit') {
+                const editCourseIdEl = safeGetElement('edit_course_id');
+                if (editCourseIdEl) {
+                    const editCourseId = editCourseIdEl.value;
+                    if (editCourseId) {
+                        // Get current course credits from the course data
+                        const editBtn = document.querySelector(`[data-course*="${editCourseId}"]`);
+                        if (editBtn) {
+                            try {
+                                const courseDataAttr = editBtn.getAttribute('data-course');
+                                if (courseDataAttr) {
+                                    const courseData = JSON.parse(courseDataAttr);
+                                    const currentCredits = parseInt(courseData.credits) || 0;
+                                    totalCredits -= currentCredits;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing course data:', e);
+                                // Continue with calculation even if parsing fails
+                            }
+                        }
+                    }
+                }
+            }
+
+            const newTotal = totalCredits + credits;
+            const remaining = 60 - totalCredits;
+
+            if (newTotal > 60) {
+                infoElement.textContent = `Cannot assign ${credits} ECs. Only ${remaining} ECs remaining for Year ${year}.`;
+                infoElement.style.color = 'var(--accent-danger)';
+                if (submitButton) submitButton.disabled = true;
+            } else {
+                infoElement.textContent = `Total ECs in Year ${year}: ${totalCredits + credits}/60. Remaining: ${60 - newTotal} ECs`;
+                infoElement.style.color = 'var(--text-secondary)';
+                if (submitButton) submitButton.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error validating ECs:', error);
+        }
+    }
     </script>
 </body>
 </html>

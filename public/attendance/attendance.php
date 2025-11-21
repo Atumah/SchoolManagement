@@ -8,6 +8,12 @@ require_once __DIR__ . '/../includes/data.php';
 requireAuth();
 
 $currentUser = getCurrentUser();
+// Only teachers and admins can manage attendance
+if ($currentUser['role'] === 'Student') {
+    header('Location: /index.php');
+    exit;
+}
+
 $flash = getFlashMessage();
 
 // Handle CRUD operations

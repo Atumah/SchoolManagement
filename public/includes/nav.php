@@ -53,11 +53,9 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                     <?php
                     $isAcademicPage = strpos($currentPage, 'course.php') !== false
                         || strpos($currentPage, 'attendance.php') !== false
-                        || strpos($currentPage, 'view.php') !== false
                         || strpos($currentPage, 'progress.php') !== false;
                     $isCoursePage = strpos($currentPage, 'course.php') !== false;
                     $isAttendancePage = strpos($currentPage, 'attendance.php') !== false;
-                    $isGradesPage = strpos($currentPage, 'view.php') !== false;
                     $isProgressPage = strpos($currentPage, 'progress.php') !== false;
                     ?>
                     <li class="navbar-dropdown">
@@ -72,10 +70,6 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                             <li>
                                 <a href="/attendance/attendance.php"
                                    class="<?= $isAttendancePage ? 'active' : '' ?>">Attendance</a>
-                            </li>
-                            <li>
-                                <a href="/grades/view.php"
-                                   class="<?= $isGradesPage ? 'active' : '' ?>">Grades</a>
                             </li>
                             <li>
                                 <a href="/progress/progress.php"
@@ -154,11 +148,9 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                     <!-- Academic -->
                     <?php
                     $isAcademicPageAdmin = strpos($currentPage, 'course.php') !== false
-                        || strpos($currentPage, 'view.php') !== false
                         || strpos($currentPage, 'progress.php') !== false
                         || strpos($currentPage, 'notes.php') !== false;
                     $isCoursePageAdmin = strpos($currentPage, 'course.php') !== false;
-                    $isGradesPageAdmin = strpos($currentPage, 'view.php') !== false;
                     $isProgressPageAdmin = strpos($currentPage, 'progress.php') !== false;
                     $isNotesPageAdmin = strpos($currentPage, 'notes.php') !== false;
                     ?>
@@ -170,10 +162,6 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                             <li>
                                 <a href="/courses/course.php"
                                    class="<?= $isCoursePageAdmin ? 'active' : '' ?>">Courses</a>
-                            </li>
-                            <li>
-                                <a href="/grades/view.php"
-                                   class="<?= $isGradesPageAdmin ? 'active' : '' ?>">Grades</a>
                             </li>
                             <li>
                                 <a href="/progress/progress.php"
@@ -234,11 +222,9 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                     <!-- Academic -->
                     <?php
                     $isAcademicPageDesigner = strpos($currentPage, 'course.php') !== false
-                        || strpos($currentPage, 'view.php') !== false
                         || strpos($currentPage, 'progress.php') !== false
                         || strpos($currentPage, 'notes.php') !== false;
                     $isCoursePageDesigner = strpos($currentPage, 'course.php') !== false;
-                    $isGradesPageDesigner = strpos($currentPage, 'view.php') !== false;
                     $isProgressPageDesigner = strpos($currentPage, 'progress.php') !== false;
                     $isNotesPageDesigner = strpos($currentPage, 'notes.php') !== false;
                     ?>
@@ -250,10 +236,6 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                             <li>
                                 <a href="/courses/course.php"
                                    class="<?= $isCoursePageDesigner ? 'active' : '' ?>">Courses</a>
-                            </li>
-                            <li>
-                                <a href="/grades/view.php"
-                                   class="<?= $isGradesPageDesigner ? 'active' : '' ?>">Grades</a>
                             </li>
                             <li>
                                 <a href="/progress/progress.php"
@@ -271,6 +253,60 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                     <li>
                         <a href="/appointments/appointments.php"
                            class="<?= $isAppointmentsPageDesigner ? 'active' : '' ?>">Appointments</a>
+                    </li>
+
+                <?php elseif ($currentUser['role'] === 'Student') : ?>
+                    <!-- Academic -->
+                    <?php
+                    $isAcademicPageStudent = strpos($currentPage, 'join.php') !== false
+                        || strpos($currentPage, 'progress.php') !== false;
+                    $isJoinPage = strpos($currentPage, 'join.php') !== false;
+                    $isProgressPageStudent = strpos($currentPage, 'progress.php') !== false;
+                    ?>
+                    <li class="navbar-dropdown">
+                        <a href="#" class="dropdown-toggle <?= $isAcademicPageStudent ? 'active' : '' ?>">
+                            Academic <span class="dropdown-arrow">▼</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/courses/join.php"
+                                   class="<?= $isJoinPage ? 'active' : '' ?>">Courses</a>
+                            </li>
+                            <li>
+                                <a href="/progress/progress.php"
+                                   class="<?= $isProgressPageStudent ? 'active' : '' ?>">Progress</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Content -->
+                    <?php
+                    $isContentPageStudent = strpos($currentPage, 'announcements.php') !== false
+                        || strpos($currentPage, 'events.php') !== false;
+                    $isAnnouncementsPageStudent = strpos($currentPage, 'announcements.php') !== false;
+                    $isEventsPageStudent = strpos($currentPage, 'events.php') !== false;
+                    ?>
+                    <li class="navbar-dropdown">
+                        <a href="#" class="dropdown-toggle <?= $isContentPageStudent ? 'active' : '' ?>">
+                            Content <span class="dropdown-arrow">▼</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/announcements/announcements.php"
+                                   class="<?= $isAnnouncementsPageStudent ? 'active' : '' ?>">Announcements</a>
+                            </li>
+                            <li>
+                                <a href="/events/events.php"
+                                   class="<?= $isEventsPageStudent ? 'active' : '' ?>">Events</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Personal -->
+                    <?php $isAppointmentsPageStudent = strpos($currentPage, 'appointments.php') !== false; ?>
+                    <li>
+                        <a href="/appointments/appointments.php"
+                           class="<?= $isAppointmentsPageStudent ? 'active' : '' ?>">Appointments</a>
                     </li>
                 <?php endif; ?>
 
@@ -343,6 +379,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropdownMenu.classList.remove('show');
             }
         }
+    });
+});
+
+// Auto-dismiss flash messages after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 500); // Wait for fade-out animation
+        }, 5000); // 5 seconds
     });
 });
 </script>

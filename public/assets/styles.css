@@ -806,3 +806,455 @@ table tr:last-child td {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-light);
 }
+
+/* ============================================================================
+   Progress Bar System Styles
+   ============================================================================ */
+
+/* Progress Container */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+/* Progress Year Bar */
+.progress-year-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+}
+
+.progress-year-bar:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+.progress-year-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    position: relative;
+    padding-right: 2rem;
+}
+
+.year-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.year-label h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-lighter);
+}
+
+.year-stats {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 24px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-light), var(--primary-lighter));
+    transition: width 1s ease-out;
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer animation after fill completes */
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.8),
+        rgba(255, 255, 255, 0.9),
+        rgba(255, 255, 255, 0.8),
+        transparent
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    transform: skewX(-20deg);
+    filter: blur(2px);
+}
+
+.progress-bar-fill.animate-complete::after {
+    opacity: 1;
+    animation: shimmer 2s linear infinite;
+}
+
+/* Pulse animation for completed bars */
+.progress-bar-fill.animate-complete {
+    animation: pulse-glow 2s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 150%;
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(96, 165, 250, 0.9),
+                    0 0 35px rgba(96, 165, 250, 0.6);
+        filter: brightness(1);
+        transform: scaleY(1);
+    }
+    50% {
+        box-shadow: inset 0 0 35px rgba(255, 255, 255, 0.5),
+                    0 0 30px rgba(96, 165, 250, 1.2),
+                    0 0 50px rgba(96, 165, 250, 0.9),
+                    0 0 70px rgba(96, 165, 250, 0.5);
+        filter: brightness(1.2);
+        transform: scaleY(1.03);
+    }
+}
+
+.expand-icon {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: transform var(--transition-normal);
+}
+
+/* Grades Table Styles */
+.grades-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.grades-table thead {
+    background: var(--bg-tertiary);
+}
+
+.grades-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0;
+}
+
+.grades-table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.grades-table tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.grades-table tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Grade row backgrounds - only for courses with grades */
+.grades-table tbody tr.grade-row-passed {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.grades-table tbody tr.grade-row-passed:hover {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.grades-table tbody tr.grade-row-failed {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.grades-table tbody tr.grade-row-failed:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* No background for courses without grades (default row styling applies) */
+.grades-table tbody tr:not(.grade-row-passed):not(.grade-row-failed) {
+    background: transparent;
+}
+
+/* Sortable Header Styles */
+.grades-table th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.grades-table th .sortable-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-md);
+    transition: background-color var(--transition-fast);
+}
+
+.grades-table th:hover {
+    background: var(--bg-elevated);
+}
+
+.grades-table th:hover .sortable-header {
+    color: var(--primary-light);
+}
+
+.sort-icon {
+    font-size: 1rem;
+    display: inline-block;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.sort-icon::before {
+    content: '⇅';
+    color: var(--text-primary);
+    opacity: 0.7;
+}
+
+.sort-icon.asc::before {
+    content: '↑';
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+.sort-icon.desc::before {
+    content: '↓';
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+.grades-table th:hover .sort-icon::before {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.grades-table th:hover .sort-icon.asc::before,
+.grades-table th:hover .sort-icon.desc::before {
+    color: var(--text-primary);
+}
+
+/* Actions Dropdown Styles */
+.actions-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.actions-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.actions-menu-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.actions-menu {
+    position: absolute;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+    z-index: 10000;
+    min-width: 120px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(5px);
+    transition: opacity var(--transition-fast), visibility var(--transition-fast), transform var(--transition-fast);
+    max-height: none;
+}
+
+.actions-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.actions-menu.show-above {
+    bottom: 100%;
+    top: auto;
+    margin-bottom: 0.25rem;
+    margin-top: 0;
+    transform: translateY(-5px);
+}
+
+.actions-menu.show-above.show {
+    transform: translateY(0);
+}
+
+.actions-menu.show-below {
+    top: 100%;
+    bottom: auto;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+.actions-menu button,
+.actions-menu .delete-action {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    background: var(--bg-secondary);
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    font-size: 0.9rem;
+}
+
+.actions-menu button:hover,
+.actions-menu .delete-action:hover {
+    background: var(--bg-tertiary);
+}
+
+.actions-menu .delete-action {
+    color: var(--accent-danger);
+}
+
+.actions-menu .delete-action:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+
+/* Student List View (Teachers/Admins) */
+.student-list {
+    margin-top: var(--spacing-lg);
+}
+
+.student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.student-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+}
+
+.student-card:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.student-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.student-email {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* EC Info Text */
+.ec-info {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Modal Styles (if not already present) */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    margin: 5% auto;
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--shadow-xl);
+    position: relative;
+}
+
+.modal-close {
+    color: var(--text-muted);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: var(--text-primary);
+}

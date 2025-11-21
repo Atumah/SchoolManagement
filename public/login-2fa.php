@@ -13,7 +13,7 @@ if (!isset($_SESSION['pending_2fa_user_id'])) {
     exit;
 }
 
-$userId = $_SESSION['pending_2fa_user_id'];
+$userId = (string)$_SESSION['pending_2fa_user_id'];
 $user = getUserById($userId);
 $error = '';
 
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
 
             // Set authenticated session
-            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_id'] = (string)$user['id'];
             $_SESSION['user'] = $user;
             $_SESSION['username'] = $user['username'] ?? null;
             $_SESSION['role'] = $user['role'];
@@ -154,6 +154,20 @@ $csrfToken = generateCSRFToken();
             }
         });
     }
+
+    // Auto-dismiss flash messages after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.style.display = 'none';
+                }, 500); // Wait for fade-out animation
+            }, 5000); // 5 seconds
+        });
+    });
     </script>
 </body>
 </html>

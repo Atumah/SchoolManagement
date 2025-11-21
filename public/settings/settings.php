@@ -801,7 +801,8 @@ if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)) :
     </main>
 
     <script>
-    function switchTab(tab) {
+    // Define switchTab in global scope FIRST
+    window.switchTab = function(tab) {
         // Update URL
         const newUrl = window.location.pathname + '?tab=' + tab;
         window.history.pushState({}, '', newUrl);
@@ -815,9 +816,15 @@ if ($profilePic && file_exists(__DIR__ . '/..' . $profilePic)) :
             return;
         }
 
-        // Update active tab buttons
-        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
+        // Update active tab buttons - find the clicked button by tab name
+        document.querySelectorAll('.settings-tab').forEach(t => {
+            t.classList.remove('active');
+            // Check if this button's onclick contains the tab name
+            const onclickAttr = t.getAttribute('onclick');
+            if (onclickAttr && onclickAttr.includes("'" + tab + "'")) {
+                t.classList.add('active');
+            }
+        });
 
         // Fade out current content, then fade in new content
         if (currentActiveContent) {

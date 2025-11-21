@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } elseif ($_POST['action'] === 'edit') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             $user = getUserById($id);
             if ($user && $user['id'] !== $currentUser['id']) {
                 $firstName = trim($_POST['first_name'] ?? '');
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setFlashMessage('error', 'Cannot edit your own account');
             }
         } elseif ($_POST['action'] === 'delete') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             $user = getUserById($id);
             if ($user && $user['id'] !== $currentUser['id']) {
                 deleteUser($id);
@@ -129,7 +129,7 @@ if ($search) {
 }
 
 $editingId = $_GET['edit'] ?? null;
-$editingUser = $editingId ? getUserById((int)$editingId) : null;
+$editingUser = $editingId ? getUserById($editingId) : null;
 $csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
@@ -279,6 +279,7 @@ $csrfToken = generateCSRFToken();
                         <label for="add_role">Role</label>
                         <select id="add_role" name="role" required>
                             <option value="">Select Role</option>
+                            <option value="Student">Student</option>
                             <option value="Teacher">Teacher</option>
                             <option value="Admin">Admin</option>
                             <option value="Principal">Principal</option>
@@ -337,6 +338,7 @@ $csrfToken = generateCSRFToken();
                         <label for="edit_role">Role</label>
                         <select id="edit_role" name="role" required>
                             <option value="">Select Role</option>
+                            <option value="Student">Student</option>
                             <option value="Teacher">Teacher</option>
                             <option value="Admin">Admin</option>
                             <option value="Principal">Principal</option>
@@ -360,19 +362,40 @@ $csrfToken = generateCSRFToken();
     </div>
 
     <script>
+    // Helper function for safe element retrieval
+    function safeGetElement(id, errorMessage = null) {
+        const el = document.getElementById(id);
+        if (!el) {
+            const msg = errorMessage || `Element not found: ${id}`;
+            console.error(msg);
+            if (errorMessage) {
+                alert(errorMessage);
+            }
+        }
+        return el;
+    }
+
     // Add User Modal Functions
     function openAddUserModal() {
-        const modal = document.getElementById('addUserModal');
+        const modal = safeGetElement('addUserModal', 'Error: Add user modal not found. Please refresh the page.');
         if (!modal) return;
 
-        // Reset form fields
-        document.getElementById('add_first_name').value = '';
-        document.getElementById('add_last_name').value = '';
-        document.getElementById('add_password').value = '';
-        document.getElementById('add_confirm_password').value = '';
-        document.getElementById('add_email').value = '';
-        document.getElementById('add_role').value = '';
-        document.getElementById('add_status').value = 'Active';
+        // Reset form fields with null checks
+        const firstNameEl = safeGetElement('add_first_name');
+        const lastNameEl = safeGetElement('add_last_name');
+        const passwordEl = safeGetElement('add_password');
+        const confirmPasswordEl = safeGetElement('add_confirm_password');
+        const emailEl = safeGetElement('add_email');
+        const roleEl = safeGetElement('add_role');
+        const statusEl = safeGetElement('add_status');
+
+        if (firstNameEl) firstNameEl.value = '';
+        if (lastNameEl) lastNameEl.value = '';
+        if (passwordEl) passwordEl.value = '';
+        if (confirmPasswordEl) confirmPasswordEl.value = '';
+        if (emailEl) emailEl.value = '';
+        if (roleEl) roleEl.value = '';
+        if (statusEl) statusEl.value = 'Active';
 
         // Show modal
         modal.classList.add('active');
@@ -395,27 +418,36 @@ $csrfToken = generateCSRFToken();
 
     // Edit User Modal Functions
     function openEditUserModal(user) {
-        const modal = document.getElementById('editUserModal');
+        const modal = safeGetElement('editUserModal', 'Error: Edit user modal not found. Please refresh the page.');
         if (!modal) return;
 
-        // Populate form fields
-        document.getElementById('edit_user_id').value = user.id;
-        document.getElementById('edit_first_name').value = user.first_name || '';
-        document.getElementById('edit_last_name').value = user.last_name || '';
-        document.getElementById('edit_password').value = '';
-        document.getElementById('edit_confirm_password').value = '';
-        document.getElementById('edit_email').value = user.email || '';
-        document.getElementById('edit_role').value = user.role || '';
-        document.getElementById('edit_status').value = user.status || 'Active';
+        // Populate form fields with null checks
+        const userIdEl = safeGetElement('edit_user_id');
+        const firstNameEl = safeGetElement('edit_first_name');
+        const lastNameEl = safeGetElement('edit_last_name');
+        const passwordEl = safeGetElement('edit_password');
+        const confirmPasswordEl = safeGetElement('edit_confirm_password');
+        const emailEl = safeGetElement('edit_email');
+        const roleEl = safeGetElement('edit_role');
+        const statusEl = safeGetElement('edit_status');
+
+        if (userIdEl) userIdEl.value = user.id || '';
+        if (firstNameEl) firstNameEl.value = user.first_name || '';
+        if (lastNameEl) lastNameEl.value = user.last_name || '';
+        if (passwordEl) passwordEl.value = '';
+        if (confirmPasswordEl) confirmPasswordEl.value = '';
+        if (emailEl) emailEl.value = user.email || '';
+        if (roleEl) roleEl.value = user.role || '';
+        if (statusEl) statusEl.value = user.status || 'Active';
 
         // Disable role/status if editing own account
-        const currentUserId = <?= $currentUser['id'] ?>;
-        if (user.id == currentUserId) {
-            document.getElementById('edit_role').disabled = true;
-            document.getElementById('edit_status').disabled = true;
+        const currentUserId = '<?= htmlspecialchars($currentUser['id'], ENT_QUOTES, 'UTF-8') ?>';
+        if (user.id === currentUserId) {
+            if (roleEl) roleEl.disabled = true;
+            if (statusEl) statusEl.disabled = true;
         } else {
-            document.getElementById('edit_role').disabled = false;
-            document.getElementById('edit_status').disabled = false;
+            if (roleEl) roleEl.disabled = false;
+            if (statusEl) statusEl.disabled = false;
         }
 
         // Show modal
@@ -439,20 +471,31 @@ $csrfToken = generateCSRFToken();
 
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
-        const editButtons = document.querySelectorAll('.edit-user-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const userData = this.getAttribute('data-user');
-                if (userData) {
-                    try {
-                        const user = JSON.parse(userData);
-                        openEditUserModal(user);
-                    } catch (e) {
-                        console.error('Error parsing user data:', e);
-                    }
-                }
-            });
-        });
+        try {
+            const editButtons = document.querySelectorAll('.edit-user-btn');
+            if (editButtons && editButtons.length > 0) {
+                editButtons.forEach(button => {
+                    if (!button) return;
+                    button.addEventListener('click', function() {
+                        const userData = this.getAttribute('data-user');
+                        if (userData) {
+                            try {
+                                const user = JSON.parse(userData);
+                                openEditUserModal(user);
+                            } catch (e) {
+                                console.error('Error parsing user data:', e);
+                                alert('Error loading user data. Please refresh the page and try again.');
+                            }
+                        } else {
+                            console.error('User data attribute is missing');
+                            alert('Error: User data not found. Please refresh the page and try again.');
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('Error attaching edit button listeners:', e);
+        }
     });
 
     // Close any modal on Escape key
@@ -466,10 +509,46 @@ $csrfToken = generateCSRFToken();
     <?php if ($editingUser) : ?>
     // Auto-open edit modal if editing from URL
     document.addEventListener('DOMContentLoaded', function() {
-        const userData = <?= json_encode($editingUser, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-        openEditUserModal(userData);
+        try {
+            const userData = <?= json_encode($editingUser, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            if (userData && typeof openEditUserModal === 'function') {
+                openEditUserModal(userData);
+            }
+        } catch (e) {
+            console.error('Error opening edit modal:', e);
+        }
     });
     <?php endif; ?>
+
+    // Prevent double form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const addUserForm = document.getElementById('addUserForm');
+            const editUserForm = document.getElementById('editUserForm');
+
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', function(e) {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Adding...';
+                    }
+                });
+            }
+
+            if (editUserForm) {
+                editUserForm.addEventListener('submit', function(e) {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Updating...';
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error setting up form handlers:', e);
+        }
+    });
     </script>
 </body>
 </html>

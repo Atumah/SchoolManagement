@@ -56,7 +56,21 @@ function getCurrentUser(): ?array
     }
 
     require_once __DIR__ . '/data.php';
-    return getUserById($_SESSION['user_id']);
+    // Ensure user_id is a string (handle old sessions with integer IDs)
+    $userId = (string)$_SESSION['user_id'];
+    $user = getUserById($userId);
+
+    // If user doesn't exist (e.g., old session with deleted user), clear session and redirect
+    if ($user === null) {
+        logout();
+        if (!headers_sent()) {
+            header('Location: /login.php');
+            exit;
+        }
+        return null;
+    }
+
+    return $user;
 }
 
 /**
@@ -156,7 +170,7 @@ function login(string $email, string $password): bool
     if ($twofaEnabled && $hasTwofaSecret) {
         // 2FA is enabled - require verification before completing login
         // Don't complete login yet, set pending 2FA state
-        $_SESSION['pending_2fa_user_id'] = $user['id'];
+        $_SESSION['pending_2fa_user_id'] = (string)$user['id'];
         $_SESSION['pending_2fa_email'] = $user['email'];
         // Don't set authenticated session yet - wait for 2FA verification
         return true; // Return true to indicate password was correct, but 2FA is required
@@ -166,7 +180,7 @@ function login(string $email, string $password): bool
     // Regenerate session ID on login for security
     session_regenerate_id(true);
 
-    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_id'] = (string)$user['id'];
     $_SESSION['user'] = $user;
     $_SESSION['username'] = $user['username'] ?? null;
     $_SESSION['role'] = $user['role'];

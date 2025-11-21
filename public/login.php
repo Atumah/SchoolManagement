@@ -388,5 +388,21 @@ $csrfToken = generateCSRFToken();
         });
     });
     </script>
+
+    <!-- Auto-dismiss flash messages after 5 seconds -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.style.display = 'none';
+                }, 500); // Wait for fade-out animation
+            }, 5000); // 5 seconds
+        });
+    });
+    </script>
 </body>
 </html>

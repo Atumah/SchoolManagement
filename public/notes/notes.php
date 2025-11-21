@@ -24,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $teacherId = $currentUser['id'];
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            $studentId = !empty($_POST['student_id']) ? (int)$_POST['student_id'] : null;
-            $courseId = !empty($_POST['course_id']) ? (int)$_POST['course_id'] : null;
+            $studentId = !empty($_POST['student_id']) ? $_POST['student_id'] : null;
+            $courseId = !empty($_POST['course_id']) ? $_POST['course_id'] : null;
             $tags = $_POST['tags'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
 
@@ -46,11 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } elseif ($_POST['action'] === 'edit') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            $studentId = !empty($_POST['student_id']) ? (int)$_POST['student_id'] : null;
-            $courseId = !empty($_POST['course_id']) ? (int)$_POST['course_id'] : null;
+            $studentId = !empty($_POST['student_id']) ? $_POST['student_id'] : null;
+            $courseId = !empty($_POST['course_id']) ? $_POST['course_id'] : null;
             $tags = $_POST['tags'] ?? '';
             $date = $_POST['date'] ?? date('Y-m-d');
 
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } elseif ($_POST['action'] === 'delete') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             deleteNote($id);
             setFlashMessage('success', 'Note deleted successfully');
             header('Location: /notes/notes.php');
@@ -124,7 +124,7 @@ if ($search) {
 }
 
 $editingId = $_GET['edit'] ?? null;
-$editingNote = $editingId ? getNoteById((int)$editingId) : null;
+$editingNote = $editingId ? getNoteById($editingId) : null;
 $csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
@@ -422,20 +422,31 @@ $csrfToken = generateCSRFToken();
 
     // Attach event listeners to all edit buttons
     document.addEventListener('DOMContentLoaded', function() {
-        const editButtons = document.querySelectorAll('.edit-note-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const noteData = this.getAttribute('data-note');
-                if (noteData) {
-                    try {
-                        const note = JSON.parse(noteData);
-                        openEditNoteModal(note);
-                    } catch (e) {
-                        console.error('Error parsing note data:', e);
-                    }
-                }
-            });
-        });
+        try {
+            const editButtons = document.querySelectorAll('.edit-note-btn');
+            if (editButtons && editButtons.length > 0) {
+                editButtons.forEach(button => {
+                    if (!button) return;
+                    button.addEventListener('click', function() {
+                        const noteData = this.getAttribute('data-note');
+                        if (noteData) {
+                            try {
+                                const note = JSON.parse(noteData);
+                                openEditNoteModal(note);
+                            } catch (e) {
+                                console.error('Error parsing note data:', e);
+                                alert('Error loading note data. Please refresh the page and try again.');
+                            }
+                        } else {
+                            console.error('Note data attribute is missing');
+                            alert('Error: Note data not found. Please refresh the page and try again.');
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('Error attaching edit button listeners:', e);
+        }
     });
 
     // Close any modal on Escape key

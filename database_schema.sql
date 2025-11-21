@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS users;
 
 -- Users table - Central authentication table for all users
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -38,23 +38,28 @@ CREATE TABLE users (
 
 -- Courses table - Courses taught by teachers
 CREATE TABLE courses (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NULL,
-    teacher_id INT NOT NULL,
+    teacher_id VARCHAR(30) NOT NULL,
     schedule VARCHAR(255) NULL,
     max_students INT NOT NULL DEFAULT 30,
+    year INT NOT NULL DEFAULT 1,
+    credits INT NOT NULL DEFAULT 5,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_teacher_id (teacher_id)
+    INDEX idx_teacher_id (teacher_id),
+    INDEX idx_year (year),
+    CONSTRAINT chk_year CHECK (year BETWEEN 1 AND 4),
+    CONSTRAINT chk_credits CHECK (credits > 0 AND credits <= 60)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Course Students table - Bridge table connecting courses and students
 CREATE TABLE course_students (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    course_id INT NOT NULL,
-    student_id INT NOT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    course_id VARCHAR(30) NOT NULL,
+    student_id VARCHAR(30) NOT NULL,
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -65,10 +70,10 @@ CREATE TABLE course_students (
 
 -- Attendance table - Daily attendance records per student per course
 CREATE TABLE attendance (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    course_id INT NOT NULL,
-    teacher_id INT NOT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    student_id VARCHAR(30) NOT NULL,
+    course_id VARCHAR(30) NOT NULL,
+    teacher_id VARCHAR(30) NOT NULL,
     date DATE NOT NULL,
     status ENUM('Present', 'Absent') NOT NULL,
     notes TEXT NULL,
@@ -85,10 +90,10 @@ CREATE TABLE attendance (
 
 -- Progress table - Student progress notes and status tracking
 CREATE TABLE progress (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    course_id INT NOT NULL,
-    teacher_id INT NOT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    student_id VARCHAR(30) NOT NULL,
+    course_id VARCHAR(30) NOT NULL,
+    teacher_id VARCHAR(30) NOT NULL,
     notes TEXT NOT NULL,
     date DATE NOT NULL,
     status ENUM('Stable', 'Improving', 'Needs Attention', 'Excellent') NOT NULL DEFAULT 'Stable',
@@ -106,12 +111,13 @@ CREATE TABLE progress (
 
 -- Grades table - Student grades and assessments
 CREATE TABLE grades (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    course_id INT NOT NULL,
-    teacher_id INT NOT NULL,
-    grade VARCHAR(50) NOT NULL,
-    date DATE NOT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    student_id VARCHAR(30) NOT NULL,
+    course_id VARCHAR(30) NOT NULL,
+    teacher_id VARCHAR(30) NOT NULL,
+    original_grade DECIMAL(3,1) NULL,
+    final_grade TINYINT NULL,
+    date DATE NULL,
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,15 +127,18 @@ CREATE TABLE grades (
     INDEX idx_student_id (student_id),
     INDEX idx_course_id (course_id),
     INDEX idx_teacher_id (teacher_id),
-    INDEX idx_date (date)
+    INDEX idx_date (date),
+    INDEX idx_final_grade (final_grade),
+    CONSTRAINT chk_original_grade CHECK (original_grade IS NULL OR (original_grade >= 1.0 AND original_grade <= 10.0)),
+    CONSTRAINT chk_final_grade CHECK (final_grade IS NULL OR (final_grade >= 1 AND final_grade <= 10))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Notes table - General notes (can be student-specific, course-specific, or general)
 CREATE TABLE notes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    teacher_id INT NOT NULL,
-    student_id INT NULL,
-    course_id INT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    teacher_id VARCHAR(30) NOT NULL,
+    student_id VARCHAR(30) NULL,
+    course_id VARCHAR(30) NULL,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     tags VARCHAR(255) NULL,
@@ -147,10 +156,10 @@ CREATE TABLE notes (
 
 -- Announcements table - Website announcements created by Admin, Principal, or Web Designer
 CREATE TABLE announcements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    author_id INT NOT NULL,
+    author_id VARCHAR(30) NOT NULL,
     is_published BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -162,13 +171,13 @@ CREATE TABLE announcements (
 
 -- Events table - School events calendar
 CREATE TABLE events (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NULL,
     event_date DATE NOT NULL,
     event_time TIME NULL,
     location VARCHAR(255) NULL,
-    author_id INT NOT NULL,
+    author_id VARCHAR(30) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -178,9 +187,9 @@ CREATE TABLE events (
 
 -- Appointments table - Appointments/meetings that can be created by any user
 CREATE TABLE appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    created_by_id INT NOT NULL,
-    appointee_id INT NULL,
+    id VARCHAR(30) NOT NULL PRIMARY KEY,
+    created_by_id VARCHAR(30) NOT NULL,
+    appointee_id VARCHAR(30) NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NULL,
     appointment_date DATE NOT NULL,

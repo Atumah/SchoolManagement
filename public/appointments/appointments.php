@@ -10,7 +10,7 @@ requireAuth();
 $currentUser = getCurrentUser();
 $flash = getFlashMessage();
 
-// Handle CRUD operations
+// Handle CRUD operations (students can create/view their own appointments)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {

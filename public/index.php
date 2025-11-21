@@ -12,6 +12,15 @@ if (!isLoggedIn()) {
 }
 
 $currentUser = getCurrentUser();
+// getCurrentUser() will redirect if user not found, but check anyway
+if ($currentUser === null || !isset($currentUser['role'])) {
+    // User not found, redirect to login
+    if (!headers_sent()) {
+        header('Location: /login.php');
+        exit;
+    }
+}
+
 $flash = getFlashMessage();
 
 // Get user statistics
@@ -42,7 +51,7 @@ if ($currentUser['role'] === 'Teacher') {
     <?php include __DIR__ . '/includes/nav.php'; ?>
     <main class="container">
         <div class="page-header">
-            <h1>Welcome, <?= htmlspecialchars($currentUser['name']) ?></h1>
+            <h1>Welcome, <?= htmlspecialchars($currentUser['name'] ?? 'User') ?></h1>
         </div>
 
         <?php if ($flash) : ?>
@@ -130,7 +139,7 @@ if ($currentUser['role'] === 'Teacher') {
                     </a>
                 <?php endif; ?>
             </div>
-            
+
         </div>
     </main>
 </body>
