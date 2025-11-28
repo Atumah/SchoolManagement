@@ -1,0 +1,354 @@
+================================================================================
+    NETWORK DIAGRAM - THE MORNINGSTAR PRIMARY SCHOOL
+    Infrastructure Overview
+================================================================================
+
+                            [ INTERNET ]
+                                 |
+                                 |
+                         ┌───────┴───────┐
+                         │               │
+                    [ IPfire Firewall ]  │
+                    (Gateway/Router)     │
+                    IP: 192.168.1.1      │
+                         │               │
+                         │               │
+                    ┌────┴────┐          │
+                    │         │          │
+              [ LAN Switch ]  │          │
+              (192.168.1.0/24)│          │
+                    │         │          │
+         ┌──────────┼─────────┼──────────┼──────────┐
+         │          │         │          │          │
+         │          │         │          │          │
+    ┌────┴────┐ ┌──┴──┐ ┌────┴────┐ ┌──┴──┐ ┌────┴────┐
+    │         │ │     │ │         │ │     │ │         │
+    │         │ │     │ │         │ │     │ │         │
+[Windows] [Win11] [Win11] [Win11] [Win11] [Linux] [Printers]
+[Server]  [PC 1]  [PC 2]  [PC 3]  [PC 4]  [PC]    [Network]
+[2022]    (T1)    (T2)    (T3)    (T4)    (T5)    [Printer]
+         │         │         │         │          │
+         │         │         │         │          │
+    ┌────┴────┐ ┌──┴──┐ ┌────┴────┐ ┌──┴──┐ ┌────┴────┐
+    │         │ │     │ │         │ │     │ │         │
+[Win11]  [Win11] [Win11] [Win11] [Win11] [Win11] [Principal]
+[PC 5]   [PC 6]  [PC 7]  [Admin1] [Admin2][Principal][Printer]
+(T6)     (T7)    (Web)   (A1)     (A2)    (P1)    (Dedicated)
+         │         │         │         │          │
+         └─────────┴─────────┴─────────┴──────────┘
+
+================================================================================
+    DETAILED COMPONENT BREAKDOWN
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ INTERNET / EXTERNAL NETWORK                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+    • Internet Service Provider (ISP) connection
+    • Public IP address (assigned by ISP)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ IPFIRE FIREWALL (192.168.1.1)                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+    • Gateway/Router functionality
+    • Network Address Translation (NAT)
+    • Firewall rules and security policies
+    • DHCP server (optional, or handled by AD)
+    • VPN capabilities (if needed)
+    • WAN Interface: Public IP (from ISP)
+    • LAN Interface: 192.168.1.1/24
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ WINDOWS SERVER 2022 (192.168.1.10)                                         │
+│ Active Directory Domain Controller + Services                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+    │
+    ├─── Active Directory Domain Services (AD DS)
+    │    • Domain: morningstar.local (or similar)
+    │    • DNS Server
+    │    • DHCP Server (if not on firewall)
+    │    • Group Policy Management
+    │    • User Authentication & Authorization
+    │
+    ├─── File Server Services
+    │    • General Network Drive (\\server\General)
+    │      - Accessible to: All users (Teachers, Admin, Principal, Web Designer)
+    │      - Permissions: Read/Write for all
+    │    • Private Network Drive (\\server\Private)
+    │      - Accessible to: Teachers only (7 users)
+    │      - Permissions: Read/Write for Teachers group
+    │      - Hidden from: Admin, Principal, Web Designer
+    │
+    ├─── Web Server (Apache/Nginx - Open Source)
+    │    • School website hosting
+    │    • Web-based management interface
+    │    • Port: 80 (HTTP), 443 (HTTPS)
+    │    • Accessible from: Internal network
+    │
+    └─── Database Server (MySQL/MariaDB - Open Source)
+         • School management database
+         • User data, courses, grades, attendance, etc.
+         • Port: 3306 (MySQL)
+         • Accessible from: Web server and authorized clients only
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CLIENT WORKSTATIONS                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │ WINDOWS 11 CLIENTS (10 units)                                       │
+    └─────────────────────────────────────────────────────────────────────┘
+    
+    PC 1-7: Teacher Workstations (192.168.1.20-26)
+    ├─── Users: Teachers (7 users)
+    ├─── Access:
+    │    • Private Network Drive (\\server\Private) - Read/Write
+    │    • General Network Drive (\\server\General) - Read/Write
+    │    • School Management System (web interface)
+    │    • Network Printer
+    │    • Roaming Profiles (desktop, programs, files follow user)
+    │    • Course management, attendance tracking, progress notes
+    │
+    └─── Software: Windows 11 Pro, Office suite, web browser
+    
+    PC 8-9: Admin Staff Workstations (192.168.1.30-31)
+    ├─── Users: Admin Staff (2 users)
+    ├─── Access:
+    │    • General Network Drive (\\server\General) - Read/Write
+    │    • School Management System (web interface)
+    │    • Website content management (announcements, events)
+    │    • Network Printer
+    │    • Roaming Profiles
+    │
+    └─── Software: Windows 11 Pro, Office suite, web browser
+    
+    PC 10: Principal Workstation (192.168.1.40)
+    ├─── User: Principal (1 user)
+    ├─── Access:
+    │    • General Network Drive (\\server\General) - Read/Write
+    │    • School Management System (web interface)
+    │    • Website content management (announcements, events)
+    │    • Principal's Dedicated Printer (direct connection)
+    │    • Roaming Profile
+    │
+    └─── Software: Windows 11 Pro, Office suite, web browser
+    
+    PC 11: Web Designer Workstation (192.168.1.50)
+    ├─── User: Web Designer (1 user, part-time)
+    ├─── Access:
+    │    • General Network Drive (\\server\General) - Read/Write
+    │    • School Management System (web interface)
+    │    • Website design and content management
+    │    • Network Printer
+    │    • NO ACCESS to Private Network Drive
+    │    • Roaming Profile
+    │
+    └─── Software: Windows 11 Pro, web design tools, web browser
+
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │ LINUX CLIENT (1 unit)                                                │
+    └─────────────────────────────────────────────────────────────────────┘
+    
+    Linux PC: Teacher Workstation (192.168.1.60)
+    ├─── User: Teacher (1 user, Linux preference)
+    ├─── OS: Linux (Ubuntu/Debian/Fedora - distribution of choice)
+    ├─── Access:
+    │    • Private Network Drive (\\server\Private) via Samba/CIFS
+    │    • General Network Drive (\\server\General) via Samba/CIFS
+    │    • School Management System (web interface)
+    │    • Network Printer (via CUPS/IPP)
+    │    • Roaming Profile (compatible with AD)
+    │    • Course management, attendance tracking, progress notes
+    │
+    └─── Software: Linux desktop environment, Samba client, web browser
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NETWORK PRINTERS                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    Network Printer (192.168.1.100)
+    ├─── Type: Network-attached printer
+    ├─── Accessible to: All staff (Teachers, Admin, Principal, Web Designer)
+    ├─── Connection: Network (Ethernet/Wi-Fi)
+    └─── Print Queue: Managed by Windows Server Print Services
+    
+    Principal's Dedicated Printer (192.168.1.101)
+    ├─── Type: Direct-attached or network printer
+    ├─── Accessible to: Principal only
+    ├─── Connection: USB (direct) or Network (isolated)
+    └─── Print Queue: Local or dedicated print server
+
+
+================================================================================
+    ACTIVE DIRECTORY STRUCTURE
+================================================================================
+
+    morningstar.local (Domain)
+    │
+    ├─── Organizational Units (OUs)
+    │    │
+    │    ├─── Users
+    │    │    ├─── Teachers (7 users)
+    │    │    │    • Group: "Teachers"
+    │    │    │    • Permissions: Private Drive (RW), General Drive (RW)
+    │    │    │    • Software: School Management System access
+    │    │    │
+    │    │    ├─── Admin Staff (2 users)
+    │    │    │    • Group: "Administration"
+    │    │    │    • Permissions: General Drive (RW), Website Management
+    │    │    │    • Software: School Management System access
+    │    │    │
+    │    │    ├─── Principal (1 user)
+    │    │    │    • Group: "Principal"
+    │    │    │    • Permissions: General Drive (RW), Website Management
+    │    │    │    • Software: School Management System access
+    │    │    │    • Special: Dedicated printer access
+    │    │    │
+    │    │    └─── Web Designer (1 user)
+    │    │         • Group: "WebDesigner"
+    │    │         • Permissions: General Drive (RW), Website Management
+    │    │         • Software: School Management System access
+    │    │         • Restrictions: NO Private Drive access
+    │    │
+    │    ├─── Computers
+    │    │    ├─── Windows 11 PCs (10 units)
+    │    │    └─── Linux PC (1 unit)
+    │    │
+    │    └─── Groups
+    │         ├─── Teachers (7 members)
+    │         ├─── Administration (2 members)
+    │         ├─── Principal (1 member)
+    │         ├─── WebDesigner (1 member)
+    │         └─── AllStaff (11 members - all groups combined)
+
+
+================================================================================
+    NETWORK ADDRESSING SCHEME
+================================================================================
+
+    Network: 192.168.1.0/24
+    Subnet Mask: 255.255.255.0
+    Gateway: 192.168.1.1 (IPfire Firewall)
+    DNS: 192.168.1.10 (Windows Server 2022 AD)
+
+    IP Address Allocation:
+    ┌─────────────────────┬──────────────────┬──────────────────────────┐
+    │ Component           │ IP Address       │ Description              │
+    ├─────────────────────┼──────────────────┼──────────────────────────┤
+    │ IPfire Firewall     │ 192.168.1.1      │ Gateway/Router           │
+    │ Windows Server 2022 │ 192.168.1.10     │ AD, File, Web, DB Server │
+    │ Teacher PCs (1-7)   │ 192.168.1.20-26  │ Windows 11 workstations  │
+    │ Admin PCs (1-2)     │ 192.168.1.30-31  │ Windows 11 workstations  │
+    │ Principal PC        │ 192.168.1.40     │ Windows 11 workstation   │
+    │ Web Designer PC     │ 192.168.1.50     │ Windows 11 workstation   │
+    │ Linux PC            │ 192.168.1.60     │ Linux workstation        │
+    │ Network Printer     │ 192.168.1.100    │ Shared printer           │
+    │ Principal Printer   │ 192.168.1.101    │ Dedicated printer        │
+    └─────────────────────┴──────────────────┴──────────────────────────┘
+
+
+================================================================================
+    ACCESS CONTROL MATRIX
+================================================================================
+
+    ┌──────────────┬──────────────┬──────────────┬──────────────┬──────────────┐
+    │ Resource     │ Teachers     │ Admin Staff  │ Principal    │ Web Designer │
+    ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+    │ Private Drive│ Read/Write   │ No Access    │ No Access    │ No Access    │
+    │ General Drive│ Read/Write   │ Read/Write   │ Read/Write   │ Read/Write   │
+    │ Web System   │ Full Access  │ Full Access  │ Full Access  │ Full Access  │
+    │ Website Mgmt │ No           │ Yes          │ Yes          │ Yes          │
+    │ Network Print│ Yes          │ Yes          │ Yes          │ Yes          │
+    │ Principal    │ No           │ No           │ Yes          │ No           │
+    │   Printer    │              │              │              │              │
+    │ Roaming      │ Yes          │ Yes          │ Yes          │ Yes          │
+    │   Profile    │              │              │              │              │
+    └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+
+
+================================================================================
+    DATA FLOW & CONNECTIONS
+================================================================================
+
+    Internet Traffic Flow:
+    Internet → IPfire Firewall → Internal Network (192.168.1.0/24)
+
+    Authentication Flow:
+    Client → Windows Server 2022 (AD) → Authentication → Access Granted/Denied
+
+    File Access Flow:
+    Client → Windows Server 2022 (File Server) → General/Private Drive → Data
+
+    Web Application Flow:
+    Client Browser → Windows Server 2022 (Web Server) → Database Server → Data
+
+    Print Flow:
+    Client → Network Printer (via Print Server on Windows Server) → Print Job
+    Principal → Principal's Printer (direct or dedicated queue) → Print Job
+
+
+================================================================================
+    SECURITY CONSIDERATIONS
+================================================================================
+
+    1. Firewall Rules (IPfire):
+       • Inbound: Block all except necessary services
+       • Outbound: Allow HTTP/HTTPS, DNS, NTP
+       • VPN: Configure if remote access needed
+
+    2. Active Directory Security:
+       • Strong password policies
+       • Account lockout policies
+       • Regular security updates
+       • Group Policy for security settings
+
+    3. Network Segmentation:
+       • All clients on same subnet (192.168.1.0/24)
+       • Consider VLANs for future expansion
+       • Private drive access restricted by AD permissions
+
+    4. Data Privacy (GDPR Compliance):
+       • Encrypted file shares
+       • Access logging
+       • Regular backups
+       • Secure authentication (AD + 2FA if implemented)
+
+    5. Open Source Software:
+       • Regular updates for web server (Apache/Nginx)
+       • Regular updates for database (MySQL/MariaDB)
+       • Security patches applied promptly
+
+
+================================================================================
+    ROAMING PROFILE CONFIGURATION
+================================================================================
+
+    All users have roaming profiles configured in Active Directory:
+    
+    • Profile Path: \\server\Profiles\%USERNAME%
+    • Desktop, Documents, Settings follow user to any workstation
+    • Programs installed via Group Policy or available on all PCs
+    • Files accessible from any PC after login
+
+
+================================================================================
+    NOTES
+================================================================================
+
+    • All Windows 11 clients join the Active Directory domain
+    • Linux client uses Samba for AD integration and file access
+    • Network printer managed by Windows Server Print Services
+    • Principal's printer can be USB-direct or network-isolated
+    • Web server and database are open source (Apache/Nginx + MySQL/MariaDB)
+    • All sensitive data stored on Windows Server with proper permissions
+    • Regular backups recommended for AD, file shares, and database
+
+================================================================================
+END OF NETWORK DIAGRAM
+================================================================================
+

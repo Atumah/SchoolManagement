@@ -346,6 +346,8 @@ $csrfToken = generateCSRFToken();
             border-radius: var(--radius-lg);
             padding: 2rem;
             border: 1px solid var(--border-color);
+            width: 650px;
+            min-width: 0;
         }
 
         .course-info h2 {
@@ -358,6 +360,17 @@ $csrfToken = generateCSRFToken();
             justify-content: space-between;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+
+        .info-row .info-label {
+            flex-shrink: 0;
+        }
+
+        .info-row .info-value {
+            flex: 1;
+            text-align: right;
+            min-width: 0;
         }
 
         .info-row:last-child {
@@ -371,6 +384,9 @@ $csrfToken = generateCSRFToken();
 
         .info-value {
             color: var(--text-primary);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
         }
 
         .students-section {

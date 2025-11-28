@@ -107,7 +107,7 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                         </ul>
                     </li>
 
-                <?php elseif ($currentUser['role'] === 'Admin' || $currentUser['role'] === 'Principal') : ?>
+                <?php elseif ($currentUser['role'] === 'Admin') : ?>
                     <!-- Content -->
                     <?php
                     $isContentPageAdmin = strpos($currentPage, 'announcements.php') !== false
@@ -179,6 +179,60 @@ $currentPage = $_SERVER['PHP_SELF'] ?? '';
                     <li>
                         <a href="/appointments/appointments.php"
                            class="<?= $isAppointmentsPageAdmin ? 'active' : '' ?>">Appointments</a>
+                    </li>
+
+                <?php elseif ($currentUser['role'] === 'Principal') : ?>
+                    <!-- Content -->
+                    <?php
+                    $isContentPagePrincipal = strpos($currentPage, 'announcements.php') !== false
+                        || strpos($currentPage, 'events.php') !== false;
+                    $isAnnouncementsPagePrincipal = strpos($currentPage, 'announcements.php') !== false;
+                    $isEventsPagePrincipal = strpos($currentPage, 'events.php') !== false;
+                    ?>
+                    <li class="navbar-dropdown">
+                        <a href="#" class="dropdown-toggle <?= $isContentPagePrincipal ? 'active' : '' ?>">
+                            Content <span class="dropdown-arrow">▼</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/announcements/announcements.php"
+                                   class="<?= $isAnnouncementsPagePrincipal ? 'active' : '' ?>">Announcements</a>
+                            </li>
+                            <li>
+                                <a href="/events/events.php"
+                                   class="<?= $isEventsPagePrincipal ? 'active' : '' ?>">Events</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Academic -->
+                    <?php
+                    $isAcademicPagePrincipal = strpos($currentPage, 'progress.php') !== false
+                        || strpos($currentPage, 'notes.php') !== false;
+                    $isProgressPagePrincipal = strpos($currentPage, 'progress.php') !== false;
+                    $isNotesPagePrincipal = strpos($currentPage, 'notes.php') !== false;
+                    ?>
+                    <li class="navbar-dropdown">
+                        <a href="#" class="dropdown-toggle <?= $isAcademicPagePrincipal ? 'active' : '' ?>">
+                            Academic <span class="dropdown-arrow">▼</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/progress/progress.php"
+                                   class="<?= $isProgressPagePrincipal ? 'active' : '' ?>">Progress</a>
+                            </li>
+                            <li>
+                                <a href="/notes/notes.php"
+                                   class="<?= $isNotesPagePrincipal ? 'active' : '' ?>">Notes</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Personal -->
+                    <?php $isAppointmentsPagePrincipal = strpos($currentPage, 'appointments.php') !== false; ?>
+                    <li>
+                        <a href="/appointments/appointments.php"
+                           class="<?= $isAppointmentsPagePrincipal ? 'active' : '' ?>">Appointments</a>
                     </li>
 
                 <?php elseif ($currentUser['role'] === 'Web Designer') : ?>

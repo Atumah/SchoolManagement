@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/data.php';
 
-requireAnyRole(['Teacher', 'Admin']);
+requireAnyRole(['Teacher', 'Admin', 'Principal']);
 
 $currentUser = getCurrentUser();
 $flash = getFlashMessage();

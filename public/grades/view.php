@@ -5,118 +5,125 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/data.php';
 
-requireAnyRole(['Teacher', 'Admin']);
+requireAuth();
 
 $currentUser = getCurrentUser();
+$isStudent = $currentUser['role'] === 'Student';
+$isTeacherOrAdmin = hasAnyRole(['Teacher', 'Admin', 'Principal', 'Web Designer']);
+
 $flash = getFlashMessage();
 
-// Handle CRUD operations
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle CRUD operations (only for teachers/admins)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isTeacherOrAdmin) {
     // Verify CSRF token
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
         setFlashMessage('error', 'Invalid security token. Please try again.');
-        header('Location: /grades/view.php');
+        header('Location: /grades/view.php' . (isset($_GET['student']) ? '?student=' . urlencode($_GET['student']) : '') . (isset($_GET['year']) ? '&year=' . (int)$_GET['year'] : ''));
         exit;
     }
 
     if (isset($_POST['action'])) {
-        if ($_POST['action'] === 'add') {
-            $teacherId = $currentUser['id'];
-            $studentId = (int)$_POST['student_id'];
-            $courseId = (int)$_POST['course_id'];
-            $grade = (float)$_POST['grade'];
-            $date = $_POST['date'];
-            $notes = $_POST['notes'] ?? '';
+        if ($_POST['action'] === 'add' || $_POST['action'] === 'edit') {
+            $originalGrade = (float) ($_POST['original_grade'] ?? 0);
 
-            // Validation
-            if ($grade < 0 || $grade > 100) {
-                setFlashMessage('error', 'Grade must be between 0 and 100');
-            } else {
-                addGrade([
-                    'student_id' => $studentId,
-                    'course_id' => $courseId,
-                    'grade' => $grade,
-                    'date' => $date,
-                    'notes' => $notes,
-                    'teacher_id' => $teacherId
-                ]);
-                setFlashMessage('success', 'Grade added successfully');
-                header('Location: /grades/view.php');
+            if ($originalGrade < 1.0 || $originalGrade > 10.0) {
+                setFlashMessage('error', 'Original grade must be between 1.0 and 10.0');
+                header('Location: /grades/view.php' . (isset($_GET['student']) ? '?student=' . urlencode($_GET['student']) : '') . (isset($_GET['year']) ? '&year=' . (int)$_GET['year'] : ''));
                 exit;
             }
-        } elseif ($_POST['action'] === 'edit') {
-            $id = (int)$_POST['id'];
-            $studentId = (int)$_POST['student_id'];
-            $courseId = (int)$_POST['course_id'];
-            $grade = (float)$_POST['grade'];
-            $date = $_POST['date'];
-            $notes = $_POST['notes'] ?? '';
 
-            if ($grade < 0 || $grade > 100) {
-                setFlashMessage('error', 'Grade must be between 0 and 100');
-            } else {
-                updateGrade($id, [
-                    'student_id' => $studentId,
-                    'course_id' => $courseId,
-                    'grade' => $grade,
-                    'date' => $date,
-                    'notes' => $notes
-                ]);
-                setFlashMessage('success', 'Grade updated successfully');
-                header('Location: /grades/view.php');
-                exit;
+            $gradeData = [
+                'student_id' => $_POST['student_id'],
+                'course_id' => $_POST['course_id'],
+                'teacher_id' => $currentUser['id'],
+                'original_grade' => $originalGrade,
+                'date' => date('Y-m-d'), // Always use current date
+                'notes' => $_POST['notes'] ?? ''
+            ];
+
+            try {
+                if ($_POST['action'] === 'add') {
+                    addGrade($gradeData);
+                    setFlashMessage('success', 'Grade added successfully');
+                } else {
+                    $gradeId = $_POST['id'] ?? null;
+                    if (!$gradeId) {
+                        setFlashMessage('error', 'Grade ID is required for editing');
+                        header('Location: /grades/view.php' . (isset($_GET['student']) ? '?student=' . urlencode($_GET['student']) : '') . (isset($_GET['year']) ? '&year=' . (int)$_GET['year'] : ''));
+                        exit;
+                    }
+                    $result = updateGrade($gradeId, $gradeData);
+                    if ($result) {
+                        setFlashMessage('success', 'Grade updated successfully');
+                    } else {
+                        setFlashMessage('error', 'Failed to update grade. Please try again.');
+                    }
+                }
+            } catch (Exception $e) {
+                setFlashMessage('error', $e->getMessage());
             }
+
+            $redirectUrl = '/grades/view.php';
+            if (isset($_POST['student_id'])) {
+                $redirectUrl .= '?student=' . urlencode($_POST['student_id']);
+            }
+            if (isset($_GET['year'])) {
+                $redirectUrl .= '&year=' . (int)$_GET['year'];
+            }
+            header('Location: ' . $redirectUrl);
+            exit;
         } elseif ($_POST['action'] === 'delete') {
-            $id = (int)$_POST['id'];
+            $id = $_POST['id'];
             deleteGrade($id);
             setFlashMessage('success', 'Grade deleted successfully');
-            header('Location: /grades/view.php');
+            header('Location: /grades/view.php' . (isset($_GET['student']) ? '?student=' . urlencode($_GET['student']) : '') . (isset($_GET['year']) ? '&year=' . (int)$_GET['year'] : ''));
             exit;
         }
     }
 }
 
-// Get grades
-if ($currentUser['role'] === 'Teacher') {
-    $grades = getGradesByTeacher($currentUser['id']);
-} else {
-    $grades = getAllGrades();
+// Get student and year from URL
+$viewingStudentId = $_GET['student'] ?? null;
+$year = isset($_GET['year']) ? (int) $_GET['year'] : null;
+
+// Determine which student we're viewing
+$studentId = null;
+if ($isStudent) {
+    $studentId = $currentUser['id'];
+} elseif ($viewingStudentId) {
+    $studentId = $viewingStudentId;
 }
 
-// Get teacher's courses for dropdowns
-$teacherCourses = getCoursesByTeacher($currentUser['id']);
-$allStudents = [];
-foreach ($teacherCourses as $course) {
-    foreach ($course['students'] as $studentId) {
-        $student = getUserById($studentId);
-        if ($student && !in_array($student, $allStudents, true)) {
-            $allStudents[] = $student;
-        }
+// Get student info
+$viewingStudent = $studentId ? getUserById($studentId) : null;
+
+// Get courses and grades for the selected year (or all years if no year specified)
+$courses = [];
+$grades = [];
+$coursesById = [];
+
+if ($studentId) {
+    if ($year) {
+        // Get courses for specific year
+        $courses = getStudentCoursesByYear($studentId, $year);
+        $grades = getGradesByStudentAndYear($studentId, $year);
+    } else {
+        // Get all courses for student
+        $courses = getCoursesByStudent($studentId);
+        $grades = getGradesByStudent($studentId);
     }
-}
 
-// Filtering
-$filterStudent = $_GET['filter_student'] ?? '';
-$filterCourse = $_GET['filter_course'] ?? '';
-$search = $_GET['search'] ?? '';
+    // Index courses by id for quick lookup
+    foreach ($courses as $course) {
+        $coursesById[$course['id']] = $course;
+    }
 
-if ($filterStudent) {
-    $grades = array_filter($grades, fn($g) => $g['student_id'] == $filterStudent);
-}
-if ($filterCourse) {
-    $grades = array_filter($grades, fn($g) => $g['course_id'] == $filterCourse);
-}
-if ($search) {
-    $grades = array_filter($grades, function ($g) use ($search) {
-        $student = getUserById($g['student_id']);
-        $course = getCourseById($g['course_id']);
-        return stripos($student['name'] ?? '', $search) !== false ||
-               stripos($course['name'] ?? '', $search) !== false;
+    // Sort grades by date (most recent first)
+    usort($grades, static function ($a, $b) {
+        return strtotime($b['date']) - strtotime($a['date']);
     });
 }
 
-$editingId = $_GET['edit'] ?? null;
-$editingGrade = $editingId ? getGradeById((int)$editingId) : null;
 $csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
@@ -124,7 +131,8 @@ $csrfToken = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grades - School Management</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title><?= $year ? "Year $year Grades" : 'Grades' ?> - <?= $viewingStudent ? htmlspecialchars($viewingStudent['name']) : 'School Management' ?></title>
     <link rel="stylesheet" href="/assets/styles.css">
     <link rel="stylesheet" href="/assets/nav.css">
     <link rel="stylesheet" href="/assets/components.css">
@@ -133,163 +141,517 @@ $csrfToken = generateCSRFToken();
     <?php include __DIR__ . '/../includes/nav.php'; ?>
     <main class="container">
         <?php include __DIR__ . '/../includes/back-button.php'; ?>
+
         <div class="page-header">
-            <h1>Grades</h1>
-            <button class="form-toggle-btn" onclick="showAddForm()">+ Add Grade</button>
+            <h1>
+                <?php if ($year) : ?>
+                    Year <?= $year ?> Grades
+                <?php else : ?>
+                    Grades
+                <?php endif; ?>
+                <?php if ($viewingStudent && !$isStudent) : ?>
+                    - <?= htmlspecialchars($viewingStudent['name']) ?>
+                <?php endif; ?>
+            </h1>
+            <?php if ($isTeacherOrAdmin && $studentId) : ?>
+                <button class="form-toggle-btn" onclick="openAddGradeModal()">+ Add Grade</button>
+            <?php endif; ?>
         </div>
-        
+
         <?php if ($flash) : ?>
             <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($flash['message']) ?>
             </div>
         <?php endif; ?>
-        
-        <!-- Filters -->
-        <div class="filters">
-            <form method="GET" action="">
-                <div class="form-group">
-                    <label for="filter_student">Filter by Student</label>
-                    <select id="filter_student" name="filter_student">
-                        <option value="">All Students</option>
-                        <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $filterStudent == $student['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($student['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="filter_course">Filter by Course</label>
-                    <select id="filter_course" name="filter_course">
-                        <option value="">All Courses</option>
-                        <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $filterCourse == $course['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($course['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="search">Search</label>
-                    <input type="text" id="search" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search by student or course">
-                </div>
-                <button type="submit" class="btn btn-secondary">Filter</button>
-                <a href="/grades/view.php" class="btn btn-secondary">Clear</a>
-            </form>
-        </div>
-        
-        <!-- Add/Edit Form -->
-        <div class="form-container" id="grade-form" style="display: none;">
-            <h2><?= $editingGrade ? 'Edit Grade' : 'Add Grade' ?></h2>
-            <form method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <input type="hidden" name="action" value="<?= $editingGrade ? 'edit' : 'add' ?>">
-                <?php if ($editingGrade) : ?>
-                    <input type="hidden" name="id" value="<?= $editingGrade['id'] ?>">
-                <?php endif; ?>
-                <div class="form-group">
-                    <label for="student_id">Student</label>
-                    <select id="student_id" name="student_id" required>
-                        <option value="">Select Student</option>
-                        <?php foreach ($allStudents as $student) : ?>
-                            <option value="<?= $student['id'] ?>" <?= $editingGrade && $editingGrade['student_id'] == $student['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($student['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="course_id">Course</label>
-                    <select id="course_id" name="course_id" required>
-                        <option value="">Select Course</option>
-                        <?php foreach ($teacherCourses as $course) : ?>
-                            <option value="<?= $course['id'] ?>" <?= $editingGrade && $editingGrade['course_id'] == $course['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($course['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="grade">Grade (0-100)</label>
-                    <input type="number" id="grade" name="grade" min="0" max="100" step="0.1" required value="<?= $editingGrade ? $editingGrade['grade'] : '' ?>">
-                </div>
-                <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" name="date" required value="<?= $editingGrade ? $editingGrade['date'] : date('Y-m-d') ?>">
-                </div>
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes" name="notes"><?= $editingGrade ? htmlspecialchars($editingGrade['notes']) : '' ?></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary"><?= $editingGrade ? 'Update' : 'Add' ?> Grade</button>
-                <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
-            </form>
-        </div>
-        
+
         <!-- Grades Table -->
         <div class="table-container">
-            <?php if (empty($grades)) : ?>
+            <?php if (empty($courses) && empty($grades)) : ?>
                 <div class="empty-state">
-                    <p>No grades found.</p>
+                    <p><?= $year ? "No courses enrolled for Year $year." : 'No courses found.' ?></p>
                 </div>
             <?php else : ?>
-                <table>
+                <table class="grades-table">
                     <thead>
                         <tr>
-                            <th>Student</th>
-                            <th>Course</th>
-                            <th>Grade</th>
-                            <th>Date</th>
-                            <th>Notes</th>
-                            <th>Actions</th>
+                            <th onclick="sortTable('course_name')">
+                                <span class="sortable-header">
+                                    Course Name
+                                    <span class="sort-icon" id="sort-icon-course_name"></span>
+                                </span>
+                            </th>
+                            <th onclick="sortTable('teacher')">
+                                <span class="sortable-header">
+                                    Teacher
+                                    <span class="sort-icon" id="sort-icon-teacher"></span>
+                                </span>
+                            </th>
+                            <th onclick="sortTable('ec')">
+                                <span class="sortable-header">
+                                    EC
+                                    <span class="sort-icon" id="sort-icon-ec"></span>
+                                </span>
+                            </th>
+                            <th onclick="sortTable('date')">
+                                <span class="sortable-header">
+                                    Date Published
+                                    <span class="sort-icon" id="sort-icon-date"></span>
+                                </span>
+                            </th>
+                            <th onclick="sortTable('original_grade')">
+                                <span class="sortable-header">
+                                    Original Grade
+                                    <span class="sort-icon" id="sort-icon-original_grade"></span>
+                                </span>
+                            </th>
+                            <th onclick="sortTable('final_grade')">
+                                <span class="sortable-header">
+                                    Final Grade
+                                    <span class="sort-icon" id="sort-icon-final_grade"></span>
+                                </span>
+                            </th>
+                            <?php if ($isTeacherOrAdmin) : ?>
+                            <th style="width: 50px;"></th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($grades as $grade) : ?>
+                        <?php if (empty($grades)) : ?>
+                            <?php foreach ($courses as $index => $course) : ?>
+                                <?php
+                                $teacher = getUserById($course['teacher_id']);
+                                ?>
+                                <tr data-original-index="<?= $index ?>"
+                                    data-course-name="<?= htmlspecialchars(strtolower($course['name']), ENT_QUOTES, 'UTF-8') ?>"
+                                    data-teacher-name="<?= htmlspecialchars(strtolower($teacher['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                    data-ec="<?= $course['credits'] ?? 5 ?>"
+                                    data-date="0"
+                                    data-original-grade="-1"
+                                    data-final-grade="-1">
+                                    <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($teacher['name'] ?? 'Unknown') ?></td>
+                                    <td><?= $course['credits'] ?? 5 ?> ECs</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td><span style="color: var(--text-muted); font-style: italic;">No grade yet</span></td>
+                                    <?php if ($isTeacherOrAdmin) : ?>
+                                    <td>
+                                        <div class="actions-dropdown">
+                                            <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu(this, event)">⋮</button>
+                                            <div class="actions-menu">
+                                                <button type="button" onclick="openAddGradeModalForCourse('<?= htmlspecialchars($course['id'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars($course['name'], ENT_QUOTES, 'UTF-8') ?>'); toggleActionsMenu(event.target.closest('.actions-dropdown').querySelector('.actions-menu-btn'));">Add Grade</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <?php foreach ($grades as $index => $grade) : ?>
+                                <?php
+                                $course = $coursesById[$grade['course_id']] ?? null;
+                                if (!$course) {
+                                    continue;
+                                } // Skip if course not found
+
+                                $hasGrade = true;
+                                $isPassing = isPassingGrade((int) $grade['final_grade']);
+                                $rowClass = $isPassing ? 'grade-row-passed' : 'grade-row-failed';
+
+                                $teacher = getUserById($course['teacher_id']);
+                                ?>
+                                <tr class="<?= $rowClass ?>"
+                                    data-original-index="<?= $index ?>"
+                                    data-course-name="<?= htmlspecialchars(strtolower($course['name']), ENT_QUOTES, 'UTF-8') ?>"
+                                    data-teacher-name="<?= htmlspecialchars(strtolower($teacher['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                    data-ec="<?= $course['credits'] ?? 5 ?>"
+                                    data-date="<?= strtotime($grade['updated_at'] ?? $grade['date']) ?>"
+                                    data-original-grade="<?= (float)$grade['original_grade'] ?>"
+                                    data-final-grade="<?= (int)$grade['final_grade'] ?>">
+                                    <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($teacher['name'] ?? 'Unknown') ?></td>
+                                    <td><?= $course['credits'] ?? 5 ?> ECs</td>
+                                    <td><?= htmlspecialchars(date('Y-m-d', strtotime($grade['updated_at'] ?? $grade['date']))) ?></td>
+                                    <td><?= number_format((float) $grade['original_grade'], 1) ?></td>
+                                    <td><strong><?= $grade['final_grade'] ?></strong></td>
+                                    <?php if ($isTeacherOrAdmin) : ?>
+                                    <td>
+                                        <div class="actions-dropdown">
+                                            <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu(this, event)">⋮</button>
+                                            <div class="actions-menu">
+                                                <button type="button" class="edit-grade-btn-view"
+                                                        data-grade='<?= htmlspecialchars(json_encode($grade, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>'
+                                                        data-course='<?= htmlspecialchars(json_encode($course, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
+                                                <form method="POST" action="" onsubmit="return confirm('Are you sure you want to delete this grade?');">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="id" value="<?= $grade['id'] ?>">
+                                                    <button type="submit" class="delete-action">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endforeach; ?>
+
                             <?php
-                            $student = getUserById($grade['student_id']);
-                            $course = getCourseById($grade['course_id']);
-                            ?>
-                            <tr>
-                                <td><?= htmlspecialchars($student['name'] ?? 'Unknown') ?></td>
-                                <td><?= htmlspecialchars($course['name'] ?? 'Unknown') ?></td>
-                                <td><?= htmlspecialchars((string)$grade['grade']) ?></td>
-                                <td><?= htmlspecialchars($grade['date']) ?></td>
-                                <td><?= htmlspecialchars(substr($grade['notes'], 0, 50)) ?><?= strlen($grade['notes']) > 50 ? '...' : '' ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <a href="?edit=<?= $grade['id'] ?>" class="btn btn-secondary btn-small">Edit</a>
-                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this grade?');">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?= $grade['id'] ?>">
-                                            <button type="submit" class="btn btn-danger btn-small">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+                            // Show courses without grades
+                            $coursesWithGrades = array_column($grades, 'course_id');
+foreach ($courses as $index => $course) {
+    if (!in_array($course['id'], $coursesWithGrades, true)) {
+        $teacher = getUserById($course['teacher_id']);
+        ?>
+                                    <tr data-original-index="<?= count($grades) + $index ?>"
+                                        data-course-name="<?= htmlspecialchars(strtolower($course['name']), ENT_QUOTES, 'UTF-8') ?>"
+                                        data-teacher-name="<?= htmlspecialchars(strtolower($teacher['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                        data-ec="<?= $course['credits'] ?? 5 ?>"
+                                        data-date="0"
+                                        data-original-grade="-1"
+                                        data-final-grade="-1">
+                                        <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
+                                        <td><?= htmlspecialchars($teacher['name'] ?? 'Unknown') ?></td>
+                                        <td><?= $course['credits'] ?? 5 ?> ECs</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td><span style="color: var(--text-muted); font-style: italic;">No grade yet</span></td>
+                                        <?php if ($isTeacherOrAdmin) : ?>
+                                        <td>
+                                            <div class="actions-dropdown">
+                                                <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu(this, event)">⋮</button>
+                                                <div class="actions-menu">
+                                                    <button type="button" onclick="openAddGradeModalForCourse('<?= htmlspecialchars($course['id'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars($course['name'], ENT_QUOTES, 'UTF-8') ?>'); toggleActionsMenu(event.target.closest('.actions-dropdown').querySelector('.actions-menu-btn'));">Add Grade</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                    <?php
+    }
+}
+?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             <?php endif; ?>
         </div>
     </main>
-    
-    <script>
-    function showAddForm() {
-        document.getElementById('grade-form').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    function hideAddForm() {
-        document.getElementById('grade-form').style.display = 'none';
-        window.location.href = '/grades/view.php';
-    }
-    
-    <?php if ($editingGrade) : ?>
-    showAddForm();
+
+    <!-- Add/Edit Grade Modal (for teachers/admins) -->
+    <?php if ($isTeacherOrAdmin && $studentId) : ?>
+        <div id="gradeModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeGradeModal()">&times;</span>
+                <h2 id="gradeModalTitle">Add Grade</h2>
+                <form id="gradeForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" id="gradeAction" value="add">
+                    <input type="hidden" name="id" id="gradeId" value="">
+                    <input type="hidden" name="student_id" value="<?= htmlspecialchars($studentId) ?>">
+                    <?php if ($year) : ?>
+                        <input type="hidden" name="year" value="<?= $year ?>">
+                    <?php endif; ?>
+
+                    <div class="form-group">
+                        <label for="gradeCourseSelect">Course</label>
+                        <select id="gradeCourseSelect" required></select>
+                        <input type="hidden" id="gradeCourseIdHidden" name="course_id" value="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gradeOriginal">Grade (1.0 - 10.0)</label>
+                        <input type="number" id="gradeOriginal" name="original_grade" step="0.1" min="1.0" max="10.0" required>
+                        <small style="color: var(--text-muted);">Final grade will be automatically rounded (e.g., 7.5 → 8)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gradeNotes">Notes (Optional)</label>
+                        <textarea id="gradeNotes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Grade</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeGradeModal()">Cancel</button>
+                </form>
+            </div>
+        </div>
     <?php endif; ?>
+
+    <script>
+        <?php if ($isTeacherOrAdmin && $studentId) : ?>
+        const allCourses = <?= json_encode($courses) ?>;
+
+        function openAddGradeModal() {
+            const modal = document.getElementById('gradeModal');
+            const courseSelect = document.getElementById('gradeCourseSelect');
+            const courseIdHidden = document.getElementById('gradeCourseIdHidden');
+
+            // Populate course dropdown with all courses for that year/student
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            allCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = course.name + ' (' + (course.credits || 5) + ' ECs)';
+                courseSelect.appendChild(option);
+            });
+
+            // Reset form
+            document.getElementById('gradeModalTitle').textContent = 'Add Grade';
+            document.getElementById('gradeAction').value = 'add';
+            document.getElementById('gradeId').value = '';
+            courseSelect.value = '';
+            courseSelect.disabled = false;
+            courseIdHidden.value = '';
+            document.getElementById('gradeOriginal').value = '';
+            document.getElementById('gradeNotes').value = '';
+
+            // Sync hidden field when course changes
+            courseSelect.onchange = function() {
+                courseIdHidden.value = this.value;
+            };
+
+            modal.style.display = 'block';
+        }
+
+        function openAddGradeModalForCourse(courseId, courseName) {
+            openAddGradeModal();
+            // Set the selected course
+            const courseSelect = document.getElementById('gradeCourseSelect');
+            const courseIdHidden = document.getElementById('gradeCourseIdHidden');
+            courseSelect.value = courseId;
+            courseIdHidden.value = courseId;
+        }
+
+        function openEditGradeModal(grade, course) {
+            const modal = document.getElementById('gradeModal');
+            const courseSelect = document.getElementById('gradeCourseSelect');
+
+            // Populate course dropdown
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            allCourses.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name + ' (' + (c.credits || 5) + ' ECs)';
+                option.selected = c.id === course.id;
+                courseSelect.appendChild(option);
+            });
+
+            // Populate form
+            document.getElementById('gradeModalTitle').textContent = 'Edit Grade';
+            document.getElementById('gradeAction').value = 'edit';
+            document.getElementById('gradeId').value = grade.id;
+            courseSelect.value = grade.course_id;
+            courseSelect.disabled = true; // Can't change course when editing
+            // Set hidden field since disabled select won't submit
+            document.getElementById('gradeCourseIdHidden').value = grade.course_id;
+            document.getElementById('gradeOriginal').value = grade.original_grade;
+            document.getElementById('gradeNotes').value = grade.notes || '';
+
+            modal.style.display = 'block';
+        }
+
+        // Reset course select enabled state when closing modal
+        function closeGradeModal() {
+            const courseSelect = document.getElementById('gradeCourseSelect');
+            if (courseSelect) {
+                courseSelect.disabled = false;
+            }
+            document.getElementById('gradeModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('gradeModal');
+            if (event.target === modal) {
+                closeGradeModal();
+            }
+        }
+
+        // Table sorting functionality
+        let currentSort = { column: null, order: 'natural' }; // 'asc', 'desc', 'natural'
+
+        function sortTable(column) {
+            const tbody = document.querySelector('.grades-table tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Cycle through sort orders: natural -> asc -> desc -> natural
+            if (currentSort.column === column) {
+                if (currentSort.order === 'natural') {
+                    currentSort.order = 'asc';
+                } else if (currentSort.order === 'asc') {
+                    currentSort.order = 'desc';
+                } else {
+                    currentSort.order = 'natural';
+                }
+            } else {
+                currentSort.column = column;
+                currentSort.order = 'asc';
+            }
+
+            // Update sort icons
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'sort-icon';
+            });
+
+            const sortIcon = document.getElementById('sort-icon-' + column);
+            if (sortIcon) {
+                if (currentSort.order === 'asc') {
+                    sortIcon.className = 'sort-icon asc';
+                } else if (currentSort.order === 'desc') {
+                    sortIcon.className = 'sort-icon desc';
+                } else {
+                    sortIcon.className = 'sort-icon';
+                }
+            }
+
+            if (currentSort.order === 'natural') {
+                // Restore original order
+                rows.sort((a, b) => {
+                    const aIndex = parseInt(a.dataset.originalIndex || '0');
+                    const bIndex = parseInt(b.dataset.originalIndex || '0');
+                    return aIndex - bIndex;
+                });
+                rows.forEach((row, index) => {
+                    row.dataset.originalIndex = index;
+                    tbody.appendChild(row);
+                });
+            } else {
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+
+                    if (column === 'course_name') {
+                        aVal = a.dataset.courseName || '';
+                        bVal = b.dataset.courseName || '';
+                        return currentSort.order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    } else if (column === 'teacher') {
+                        aVal = a.dataset.teacherName || '';
+                        bVal = b.dataset.teacherName || '';
+                        return currentSort.order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    } else if (column === 'ec') {
+                        aVal = parseFloat(a.dataset.ec || 0);
+                        bVal = parseFloat(b.dataset.ec || 0);
+                        return currentSort.order === 'asc' ? aVal - bVal : bVal - aVal;
+                    } else if (column === 'date') {
+                        aVal = parseInt(a.dataset.date || 0);
+                        bVal = parseInt(b.dataset.date || 0);
+                        return currentSort.order === 'asc' ? aVal - bVal : bVal - aVal;
+                    } else if (column === 'original_grade') {
+                        aVal = parseFloat(a.dataset.originalGrade || -1);
+                        bVal = parseFloat(b.dataset.originalGrade || -1);
+                        // Filter out -1 (no grade) values - they go last
+                        if (aVal === -1 && bVal === -1) return 0;
+                        if (aVal === -1) return 1;
+                        if (bVal === -1) return -1;
+                        return currentSort.order === 'asc' ? aVal - bVal : bVal - aVal;
+                    } else if (column === 'final_grade') {
+                        aVal = parseFloat(a.dataset.finalGrade || -1);
+                        bVal = parseFloat(b.dataset.finalGrade || -1);
+                        // Filter out -1 (no grade) values - they go last
+                        if (aVal === -1 && bVal === -1) return 0;
+                        if (aVal === -1) return 1;
+                        if (bVal === -1) return -1;
+                        return currentSort.order === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+                    return 0;
+                });
+
+                rows.forEach((row) => {
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        // Actions menu toggle
+        function toggleActionsMenu(button, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+
+            const dropdown = button.closest('.actions-dropdown');
+            const menu = dropdown.querySelector('.actions-menu');
+            const isOpen = menu.classList.contains('show');
+
+            // Close all other menus
+            document.querySelectorAll('.actions-menu').forEach(m => {
+                m.classList.remove('show', 'show-above', 'show-below');
+            });
+
+            if (!isOpen) {
+                // Get menu dimensions (force it to be visible temporarily to measure)
+                menu.style.visibility = 'hidden';
+                menu.style.display = 'block';
+                const menuHeight = menu.offsetHeight;
+                menu.style.display = '';
+                menu.style.visibility = '';
+
+                // Get dropdown position
+                const rect = dropdown.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const menuHeightWithMargin = menuHeight + 10; // Add some margin
+
+                // Check if we're in the last row (row is near bottom of viewport)
+                const tableBody = dropdown.closest('tbody');
+                const tableRect = tableBody ? tableBody.getBoundingClientRect() : null;
+                const isLastRow = tableRect ? (rect.bottom > tableRect.bottom - 50) : false;
+
+                // Position menu above if:
+                // 1. Not enough space below (with margin)
+                // 2. OR we're in the last row
+                // AND there's more space above than below
+                if ((spaceBelow < menuHeightWithMargin || isLastRow) && spaceAbove > menuHeightWithMargin) {
+                    menu.classList.add('show', 'show-above');
+                } else {
+                    menu.classList.add('show', 'show-below');
+                }
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.actions-dropdown')) {
+                document.querySelectorAll('.actions-menu').forEach(menu => {
+                    menu.classList.remove('show', 'show-above', 'show-below');
+                });
+            }
+        });
+
+        // Attach event listeners for edit grade buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const editGradeButtons = document.querySelectorAll('.edit-grade-btn-view');
+                if (editGradeButtons && editGradeButtons.length > 0) {
+                    editGradeButtons.forEach(button => {
+                        if (!button) return;
+                        button.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const gradeData = this.getAttribute('data-grade');
+                            const courseData = this.getAttribute('data-course');
+                            if (gradeData && courseData) {
+                                try {
+                                    const grade = JSON.parse(gradeData);
+                                    const course = JSON.parse(courseData);
+                                    openEditGradeModal(grade, course);
+                                    // Close the actions menu
+                                    const menuBtn = this.closest('.actions-dropdown')?.querySelector('.actions-menu-btn');
+                                    if (menuBtn) {
+                                        toggleActionsMenu(menuBtn, e);
+                                    }
+                                } catch (err) {
+                                    console.error('Error parsing grade/course data:', err);
+                                    alert('Error loading grade data. Please refresh the page.');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('Error attaching grade button listeners:', e);
+            }
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>
-

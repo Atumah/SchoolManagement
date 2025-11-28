@@ -117,7 +117,7 @@ function verifyTOTPCode(string $secret, string $code, int $timeStep = 30, int $w
  * @param int $window Clock skew window (default 1)
  * @return bool True if code is valid and hasn't been used before
  */
-function verifyTOTPCodeWithReplayProtection(string $userId, string $secret, string $code, int $timeStep = 30, int $window = 1): bool
+function verifyTOTPCodeWithReplayProtection(int $userId, string $secret, string $code, int $timeStep = 30, int $window = 1): bool
 {
     $code = trim($code);
     if (strlen($code) !== 6 || !ctype_digit($code)) {
