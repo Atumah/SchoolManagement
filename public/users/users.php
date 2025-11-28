@@ -38,19 +38,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (getUserByEmail($email) !== null) {
                 setFlashMessage('error', 'Email already exists');
             } else {
-                // Username will be generated from email in addUser function
-                // Password will be hashed in addUser function
-                addUser([
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'password' => $password,
-                    'email' => $email,
-                    'role' => $role,
-                    'status' => $status
-                ]);
-                setFlashMessage('success', 'User added successfully');
-                header('Location: /users/users.php');
-                exit;
+                try {
+                    // Username will be generated from email in addUser function
+                    // Password will be hashed in addUser function
+                    addUser([
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'password' => $password,
+                        'email' => $email,
+                        'role' => $role,
+                        'status' => $status
+                    ]);
+                    setFlashMessage('success', 'User added successfully');
+                    header('Location: /users/users.php');
+                    exit;
+                } catch (InvalidArgumentException $e) {
+                    setFlashMessage('error', $e->getMessage());
+                } catch (Exception $e) {
+                    error_log('Error adding user: ' . $e->getMessage());
+                    setFlashMessage('error', 'Failed to add user. Please try again.');
+                }
             }
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['id'];
@@ -71,22 +78,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif (!empty($password) && strlen($password) < 8) {
                     setFlashMessage('error', 'Password must be at least 8 characters');
                 } else {
-                    // Password will be hashed in updateUser function if provided
-                    $updateData = [
-                        'first_name' => $firstName,
-                        'last_name' => $lastName,
-                        'name' => trim($firstName . ' ' . $lastName),
-                        'email' => $email,
-                        'role' => $role,
-                        'status' => $status
-                    ];
-                    if (!empty($password)) {
-                        $updateData['password'] = $password; // Will be hashed in updateUser
+                    try {
+                        // Password will be hashed in updateUser function if provided
+                        $updateData = [
+                            'first_name' => $firstName,
+                            'last_name' => $lastName,
+                            'name' => trim($firstName . ' ' . $lastName),
+                            'email' => $email,
+                            'role' => $role,
+                            'status' => $status
+                        ];
+                        if (!empty($password)) {
+                            $updateData['password'] = $password; // Will be hashed in updateUser
+                        }
+                        if (updateUser($id, $updateData)) {
+                            setFlashMessage('success', 'User updated successfully');
+                            header('Location: /users/users.php');
+                            exit;
+                        } else {
+                            setFlashMessage('error', 'Failed to update user. Please try again.');
+                        }
+                    } catch (Exception $e) {
+                        error_log('Error updating user: ' . $e->getMessage());
+                        setFlashMessage('error', 'Failed to update user. Please try again.');
                     }
-                    updateUser($id, $updateData);
-                    setFlashMessage('success', 'User updated successfully');
-                    header('Location: /users/users.php');
-                    exit;
                 }
             } else {
                 setFlashMessage('error', 'Cannot edit your own account');

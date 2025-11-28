@@ -32,18 +32,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($title) || empty($content)) {
                 setFlashMessage('error', 'Title and content are required');
             } else {
-                addNote([
-                    'title' => $title,
-                    'content' => $content,
-                    'student_id' => $studentId,
-                    'course_id' => $courseId,
-                    'tags' => $tags,
-                    'date' => $date,
-                    'teacher_id' => $teacherId
-                ]);
-                setFlashMessage('success', 'Note added successfully');
-                header('Location: /notes/notes.php');
-                exit;
+                try {
+                    addNote([
+                        'title' => $title,
+                        'content' => $content,
+                        'student_id' => $studentId,
+                        'course_id' => $courseId,
+                        'tags' => $tags,
+                        'date' => $date,
+                        'teacher_id' => $teacherId
+                    ]);
+                    setFlashMessage('success', 'Note added successfully');
+                    header('Location: /notes/notes.php');
+                    exit;
+                } catch (RuntimeException $e) {
+                    setFlashMessage('error', $e->getMessage());
+                } catch (Exception $e) {
+                    error_log('Error adding note: ' . $e->getMessage());
+                    setFlashMessage('error', 'Failed to add note. Please try again.');
+                }
             }
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['id'];
@@ -57,17 +64,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($title) || empty($content)) {
                 setFlashMessage('error', 'Title and content are required');
             } else {
-                updateNote($id, [
-                    'title' => $title,
-                    'content' => $content,
-                    'student_id' => $studentId,
-                    'course_id' => $courseId,
-                    'tags' => $tags,
-                    'date' => $date
-                ]);
-                setFlashMessage('success', 'Note updated successfully');
-                header('Location: /notes/notes.php');
-                exit;
+                try {
+                    if (updateNote($id, [
+                        'title' => $title,
+                        'content' => $content,
+                        'student_id' => $studentId,
+                        'course_id' => $courseId,
+                        'tags' => $tags,
+                        'date' => $date
+                    ])) {
+                        setFlashMessage('success', 'Note updated successfully');
+                        header('Location: /notes/notes.php');
+                        exit;
+                    } else {
+                        setFlashMessage('error', 'Failed to update note. Please try again.');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error updating note: ' . $e->getMessage());
+                    setFlashMessage('error', 'Failed to update note. Please try again.');
+                }
             }
         } elseif ($_POST['action'] === 'delete') {
             $id = $_POST['id'];

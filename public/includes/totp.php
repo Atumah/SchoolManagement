@@ -110,14 +110,14 @@ function verifyTOTPCode(string $secret, string $code, int $timeStep = 30, int $w
  * Verify TOTP code with replay protection (one-time use)
  * This function checks if a code has been used before and prevents reuse
  *
- * @param int $userId User ID to track code usage
+ * @param string $userId User ID to track code usage
  * @param string $secret TOTP secret
  * @param string $code 6-digit code to verify
  * @param int $timeStep Time step in seconds (default 30)
  * @param int $window Clock skew window (default 1)
  * @return bool True if code is valid and hasn't been used before
  */
-function verifyTOTPCodeWithReplayProtection(int $userId, string $secret, string $code, int $timeStep = 30, int $window = 1): bool
+function verifyTOTPCodeWithReplayProtection(string $userId, string $secret, string $code, int $timeStep = 30, int $window = 1): bool
 {
     $code = trim($code);
     if (strlen($code) !== 6 || !ctype_digit($code)) {
