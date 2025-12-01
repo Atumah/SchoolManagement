@@ -104,7 +104,7 @@ $Groups = @(
 
 foreach ($Group in $Groups) {
     try {
-        if (-not (Get-ADGroup -Filter "Name -eq '$($Group.Name)' -ErrorAction SilentlyContinue)) {
+        if (-not (Get-ADGroup -Filter "Name -eq '$($Group.Name)'" -ErrorAction SilentlyContinue)) {
             New-ADGroup -Name $Group.Name -GroupScope Global -Description $Group.Description -Path $UsersOU
             Write-Host "  ✓ Created group: $($Group.Name)" -ForegroundColor Green
         } else {
@@ -151,7 +151,7 @@ $AllUsers = $Teachers + $Admins + $Principal + $WebDesigner
 
 foreach ($User in $AllUsers) {
     try {
-        if (-not (Get-ADUser -Filter "SamAccountName -eq '$($User.Username)' -ErrorAction SilentlyContinue)) {
+        if (-not (Get-ADUser -Filter "SamAccountName -eq '$($User.Username)'" -ErrorAction SilentlyContinue)) {
             New-ADUser `
                 -SamAccountName $User.Username `
                 -Name $User.Name `
