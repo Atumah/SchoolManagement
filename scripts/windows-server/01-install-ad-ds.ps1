@@ -41,9 +41,12 @@ Write-Host "Step 1: Installing AD DS feature..." -ForegroundColor Yellow
 try {
     $result = Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
     
-    if ($result.ExitCode -ne "Success" -and $result.ExitCode -ne "SuccessRestartRequired") {
+    # Check if feature was installed successfully
+    if ($result.Success -eq $false) {
         Write-Host "ERROR: Failed to install AD DS feature" -ForegroundColor Red
-        Write-Host "Exit Code: $($result.ExitCode)" -ForegroundColor Red
+        if ($result.ExitCode) {
+            Write-Host "Exit Code: $($result.ExitCode)" -ForegroundColor Red
+        }
         exit 1
     }
     
@@ -77,10 +80,10 @@ try {
     Install-ADDSForest `
         -CreateDnsDelegation:$false `
         -DatabasePath "C:\Windows\NTDS" `
-        -DomainMode "WinThreshold" `
+        -DomainMode "Win2012R2" `
         -DomainName $DomainName `
         -DomainNetbiosName $DomainNetBIOS `
-        -ForestMode "WinThreshold" `
+        -ForestMode "Win2012R2" `
         -InstallDns:$true `
         -LogPath "C:\Windows\NTDS" `
         -NoRebootOnCompletion:$false `
