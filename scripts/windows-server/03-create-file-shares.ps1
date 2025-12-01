@@ -16,7 +16,12 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Import AD module
-Import-Module ActiveDirectory
+try {
+    Import-Module ActiveDirectory -ErrorAction Stop
+} catch {
+    Write-Host "ERROR: Failed to import ActiveDirectory module" -ForegroundColor Red
+    exit 1
+}
 
 # Configuration
 $BasePath = "D:\Shares"
@@ -28,8 +33,11 @@ $ProfilesPath = "$BasePath\Profiles"
 if (-not (Test-Path "D:\")) {
     Write-Host "WARNING: D: drive does not exist!" -ForegroundColor Yellow
     Write-Host "Please create D: drive first using Disk Management." -ForegroundColor Yellow
-    Write-Host "Press any key to continue anyway (will use C: drive)..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    $continue = Read-Host "Continue anyway using C: drive? (yes/no)"
+    if ($continue -ne "yes") {
+        Write-Host "Cancelled. Please create D: drive first." -ForegroundColor Yellow
+        exit 0
+    }
     $BasePath = "C:\Shares"
     $PrivatePath = "$BasePath\Private"
     $GeneralPath = "$BasePath\General"
@@ -101,15 +109,30 @@ Write-Host ""
 Write-Host "Step 3: Creating network shares..." -ForegroundColor Yellow
 
 # Remove existing shares if they exist
-$ExistingShares = Get-SmbShare -ErrorAction SilentlyContinue | Where-Object { $_.Name -in @("Private", "General", "Profiles") }
-foreach ($Share in $ExistingShares) {
-    Remove-SmbShare -Name $Share.Name -Force -ErrorAction SilentlyContinue
-    Write-Host "  - Removed existing share: $($Share.Name)" -ForegroundColor Gray
+try {
+    $ExistingShares = Get-SmbShare -ErrorAction SilentlyContinue | Where-Object { $_.Name -in @("Private", "General", "Profiles") }
+    foreach ($Share in $ExistingShares) {
+        try {
+            Remove-SmbShare -Name $Share.Name -Force -ErrorAction Stop
+            Write-Host "  - Removed existing share: $($Share.Name)" -ForegroundColor Gray
+        } catch {
+            Write-Host "  ⚠ Could not remove existing share $($Share.Name): $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+} catch {
+    Write-Host "  - No existing shares to remove" -ForegroundColor Gray
 }
 
 # Create Private share
 try {
-    New-SmbShare -Name "Private" -Path $PrivatePath -Description "Private network drive for teachers and principal" -FullAccess "MORNINGSTAR\FileServer_Private_Access" | Out-Null
+    # Verify group exists
+    $GroupExists = Get-ADGroup -Filter "Name -eq 'FileServer_Private_Access'" -ErrorAction SilentlyContinue
+    if (-not $GroupExists) {
+        Write-Host "  ⚠ Warning: Group 'FileServer_Private_Access' not found. Share will be created without permissions." -ForegroundColor Yellow
+        New-SmbShare -Name "Private" -Path $PrivatePath -Description "Private network drive for teachers and principal" | Out-Null
+    } else {
+        New-SmbShare -Name "Private" -Path $PrivatePath -Description "Private network drive for teachers and principal" -FullAccess "MORNINGSTAR\FileServer_Private_Access" | Out-Null
+    }
     Write-Host "  ✓ Created share: Private" -ForegroundColor Green
 } catch {
     Write-Host "  ✗ Error creating Private share: $($_.Exception.Message)" -ForegroundColor Red
@@ -117,7 +140,14 @@ try {
 
 # Create General share
 try {
-    New-SmbShare -Name "General" -Path $GeneralPath -Description "General network drive for all staff" -FullAccess "MORNINGSTAR\FileServer_General_Access" | Out-Null
+    # Verify group exists
+    $GroupExists = Get-ADGroup -Filter "Name -eq 'FileServer_General_Access'" -ErrorAction SilentlyContinue
+    if (-not $GroupExists) {
+        Write-Host "  ⚠ Warning: Group 'FileServer_General_Access' not found. Share will be created without permissions." -ForegroundColor Yellow
+        New-SmbShare -Name "General" -Path $GeneralPath -Description "General network drive for all staff" | Out-Null
+    } else {
+        New-SmbShare -Name "General" -Path $GeneralPath -Description "General network drive for all staff" -FullAccess "MORNINGSTAR\FileServer_General_Access" | Out-Null
+    }
     Write-Host "  ✓ Created share: General" -ForegroundColor Green
 } catch {
     Write-Host "  ✗ Error creating General share: $($_.Exception.Message)" -ForegroundColor Red
@@ -129,6 +159,7 @@ try {
     Write-Host "  ✓ Created share: Profiles" -ForegroundColor Green
 } catch {
     Write-Host "  ✗ Error creating Profiles share: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Note: Domain Users group should exist by default" -ForegroundColor Yellow
 }
 
 Write-Host ""

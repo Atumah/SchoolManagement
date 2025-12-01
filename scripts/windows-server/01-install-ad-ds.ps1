@@ -42,11 +42,11 @@ try {
     $result = Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
     
     # Check if feature was installed successfully
-    if ($result.Success -eq $false) {
+    # Verify the feature is actually installed
+    $FeatureInstalled = Get-WindowsFeature -Name AD-Domain-Services
+    if ($FeatureInstalled.InstallState -ne "Installed") {
         Write-Host "ERROR: Failed to install AD DS feature" -ForegroundColor Red
-        if ($result.ExitCode) {
-            Write-Host "Exit Code: $($result.ExitCode)" -ForegroundColor Red
-        }
+        Write-Host "Feature state: $($FeatureInstalled.InstallState)" -ForegroundColor Red
         exit 1
     }
     

@@ -77,8 +77,16 @@ if (-not (Test-Path $WebsitePath)) {
 }
 
 # Copy files (exclude git, docs, docker, scripts)
-$ExcludeItems = @(".git", "*.md", "docker", "scripts\windows-server", "scripts\linux-client", ".env", ".env.example")
-Copy-Item -Path ".\*" -Destination $WebsitePath -Recurse -Exclude $ExcludeItems -Force -ErrorAction SilentlyContinue
+Write-Host "  Copying files..." -ForegroundColor Yellow
+$ExcludePatterns = @(".git", "*.md", "docker", "scripts", ".env", ".env.example")
+$ItemsToCopy = Get-ChildItem -Path "." -Exclude $ExcludePatterns -Force
+foreach ($Item in $ItemsToCopy) {
+    try {
+        Copy-Item -Path $Item.FullName -Destination $WebsitePath -Recurse -Force -ErrorAction Stop
+    } catch {
+        Write-Host "  ⚠ Could not copy $($Item.Name): $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
 Write-Host "  ✓ Website files copied to: $WebsitePath" -ForegroundColor Green
 
 # Set permissions

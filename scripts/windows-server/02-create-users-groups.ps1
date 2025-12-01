@@ -16,10 +16,22 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Import AD module
-Import-Module ActiveDirectory
+try {
+    Import-Module ActiveDirectory -ErrorAction Stop
+} catch {
+    Write-Host "ERROR: Failed to import ActiveDirectory module" -ForegroundColor Red
+    Write-Host "Make sure you are running this on a Domain Controller" -ForegroundColor Yellow
+    exit 1
+}
 
 # Configuration
-$DomainDN = (Get-ADDomain).DistinguishedName
+try {
+    $DomainDN = (Get-ADDomain).DistinguishedName
+} catch {
+    Write-Host "ERROR: Failed to get domain information" -ForegroundColor Red
+    Write-Host "Make sure you are logged in to the domain" -ForegroundColor Yellow
+    exit 1
+}
 $UsersOU = "OU=Users,$DomainDN"
 $TeachersOU = "OU=Teachers,$UsersOU"
 $AdminOU = "OU=Administration,$UsersOU"
@@ -167,8 +179,16 @@ foreach ($User in $AllUsers) {
                 -ChangePasswordAtLogon $true
 
             # Add user to group
-            Add-ADGroupMember -Identity $User.Group -Members $User.Username
-            Write-Host "  ✓ Created user: $($User.Username) (Group: $($User.Group))" -ForegroundColor Green
+            try {
+                if (Get-ADGroup -Filter "Name -eq '$($User.Group)'" -ErrorAction SilentlyContinue) {
+                    Add-ADGroupMember -Identity $User.Group -Members $User.Username -ErrorAction Stop
+                    Write-Host "  ✓ Created user: $($User.Username) (Group: $($User.Group))" -ForegroundColor Green
+                } else {
+                    Write-Host "  ⚠ Created user: $($User.Username) but group $($User.Group) not found" -ForegroundColor Yellow
+                }
+            } catch {
+                Write-Host "  ⚠ Created user: $($User.Username) but failed to add to group $($User.Group): $($_.Exception.Message)" -ForegroundColor Yellow
+            }
         } else {
             Write-Host "  - User $($User.Username) already exists" -ForegroundColor Gray
         }
@@ -185,7 +205,9 @@ Write-Host "Step 4: Adding users to file server groups..." -ForegroundColor Yell
 # Teachers get private drive access
 foreach ($Teacher in $Teachers) {
     try {
-        Add-ADGroupMember -Identity "FileServer_Private_Access" -Members $Teacher.Username -ErrorAction SilentlyContinue
+        if (Get-ADGroup -Filter "Name -eq 'FileServer_Private_Access'" -ErrorAction SilentlyContinue) {
+            Add-ADGroupMember -Identity "FileServer_Private_Access" -Members $Teacher.Username -ErrorAction SilentlyContinue
+        }
     } catch {}
 }
 
@@ -193,7 +215,9 @@ foreach ($Teacher in $Teachers) {
 $AllStaff = $Teachers + $Admins + $Principal + $WebDesigner
 foreach ($Staff in $AllStaff) {
     try {
-        Add-ADGroupMember -Identity "FileServer_General_Access" -Members $Staff.Username -ErrorAction SilentlyContinue
+        if (Get-ADGroup -Filter "Name -eq 'FileServer_General_Access'" -ErrorAction SilentlyContinue) {
+            Add-ADGroupMember -Identity "FileServer_General_Access" -Members $Staff.Username -ErrorAction SilentlyContinue
+        }
     } catch {}
 }
 
@@ -201,7 +225,9 @@ foreach ($Staff in $AllStaff) {
 $WebsiteEditors = $Admins + $Principal + $WebDesigner
 foreach ($Editor in $WebsiteEditors) {
     try {
-        Add-ADGroupMember -Identity "Website_Editors" -Members $Editor.Username -ErrorAction SilentlyContinue
+        if (Get-ADGroup -Filter "Name -eq 'Website_Editors'" -ErrorAction SilentlyContinue) {
+            Add-ADGroupMember -Identity "Website_Editors" -Members $Editor.Username -ErrorAction SilentlyContinue
+        }
     } catch {}
 }
 
