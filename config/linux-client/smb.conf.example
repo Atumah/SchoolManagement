@@ -1,0 +1,17 @@
+# Samba Configuration for AD Domain Join
+# This is automatically configured by 02-join-domain.sh
+# Manual configuration if needed:
+
+[global]
+   workgroup = MORNINGSTAR
+   realm = MORNINGSTAR.LOCAL
+   security = ads
+   idmap uid = 10000-20000
+   idmap gid = 10000-20000
+   winbind enum users = yes
+   winbind enum groups = yes
+   winbind use default domain = yes
+   template homedir = /home/%U
+   template shell = /bin/bash
+   winbind offline logon = yes
+
