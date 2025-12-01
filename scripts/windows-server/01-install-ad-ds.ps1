@@ -38,23 +38,40 @@ Write-Host ""
 
 # Install AD DS feature
 Write-Host "Step 1: Installing AD DS feature..." -ForegroundColor Yellow
-Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
-
-if ($LASTEXITCODE -ne 0) {
+try {
+    $result = Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+    
+    if ($result.ExitCode -ne "Success" -and $result.ExitCode -ne "SuccessRestartRequired") {
+        Write-Host "ERROR: Failed to install AD DS feature" -ForegroundColor Red
+        Write-Host "Exit Code: $($result.ExitCode)" -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "✓ AD DS feature installed" -ForegroundColor Green
+    Write-Host ""
+} catch {
     Write-Host "ERROR: Failed to install AD DS feature" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ AD DS feature installed" -ForegroundColor Green
-Write-Host ""
-
 # Import AD DS Deployment module
 Write-Host "Step 2: Importing AD DS Deployment module..." -ForegroundColor Yellow
-Import-Module ADDSDeployment
+try {
+    Import-Module ADDSDeployment -ErrorAction Stop
+    Write-Host "✓ AD DS Deployment module imported" -ForegroundColor Green
+    Write-Host ""
+} catch {
+    Write-Host "ERROR: Failed to import ADDSDeployment module" -ForegroundColor Red
+    Write-Host "Make sure AD DS feature is installed first" -ForegroundColor Yellow
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
+}
 
 # Promote server to Domain Controller
 Write-Host "Step 3: Promoting server to Domain Controller..." -ForegroundColor Yellow
 Write-Host "This will take several minutes. Please wait..." -ForegroundColor Yellow
+Write-Host ""
 
 try {
     Install-ADDSForest `
@@ -79,7 +96,6 @@ try {
     Write-Host "The server will restart automatically." -ForegroundColor Yellow
     Write-Host "After restart, log in as: $DomainNetBIOS\Administrator" -ForegroundColor Yellow
     Write-Host ""
-    
 } catch {
     Write-Host ""
     Write-Host "ERROR: Failed to install Domain Controller" -ForegroundColor Red

@@ -148,11 +148,15 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "  Installing dependencies..." -ForegroundColor Yellow
-composer install --no-dev --optimize-autoloader
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "  ✓ PHP dependencies installed" -ForegroundColor Green
-} else {
-    Write-Host "  ✗ Error installing dependencies" -ForegroundColor Red
+try {
+    composer install --no-dev --optimize-autoloader
+    if ($LASTEXITCODE -eq 0 -or $?) {
+        Write-Host "  ✓ PHP dependencies installed" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ Error installing dependencies" -ForegroundColor Red
+    }
+} catch {
+    Write-Host "  ✗ Error installing dependencies: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Write-Host ""
