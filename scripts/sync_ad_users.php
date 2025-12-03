@@ -48,7 +48,17 @@ ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
 // Bind as administrator (or use service account)
 // For initial sync, you may need admin credentials
 echo "Binding to AD...\n";
-$bindPassword = getenv('AD_ADMIN_PASSWORD') ?: 'Morningstar1'; // Use environment variable or default
+
+// Try to get password from environment or prompt
+$bindPassword = getenv('AD_ADMIN_PASSWORD');
+if (!$bindPassword) {
+    // Try common passwords or prompt
+    echo "Enter Administrator password (or press Enter to try default): ";
+    $bindPassword = trim(fgets(STDIN));
+    if (empty($bindPassword)) {
+        $bindPassword = 'Morningstar1'; // Default password
+    }
+}
 
 // Try multiple bind formats
 $bindMethods = [
