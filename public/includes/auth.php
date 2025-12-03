@@ -145,8 +145,14 @@ function login(string $email, string $password): bool
         return false;
     }
 
-    // Try AD authentication first
-    $adUserData = authenticateWithAD($email, $password);
+    // Try AD authentication first (with timeout protection)
+    $adUserData = null;
+    try {
+        $adUserData = authenticateWithAD($email, $password);
+    } catch (Exception $e) {
+        error_log('AD authentication error: ' . $e->getMessage());
+        // Fall through to database authentication
+    }
     
     if ($adUserData !== null) {
         // AD authentication successful - sync user to database

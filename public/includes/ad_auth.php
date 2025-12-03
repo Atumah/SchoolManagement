@@ -18,6 +18,9 @@ declare(strict_types=1);
  */
 function authenticateWithAD(string $username, string $password): ?array
 {
+    // Increase execution time for LDAP operations
+    set_time_limit(60);
+    
     // AD Configuration
     $adServer = '192.168.1.10'; // Windows Server IP
     $adDomain = 'morningstar.local';
@@ -29,16 +32,18 @@ function authenticateWithAD(string $username, string $password): ?array
         return null;
     }
     
-    // Connect to AD
+    // Connect to AD with timeout
     $ldap = @ldap_connect("ldap://{$adServer}:389");
     if (!$ldap) {
         error_log('Failed to connect to AD server');
         return null;
     }
     
-    // Set LDAP options
+    // Set LDAP options with timeouts
     ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
     ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+    ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, 10); // 10 second timeout
+    ldap_set_option($ldap, LDAP_OPT_TIMELIMIT, 10); // 10 second timeout
     
     // Try different username formats
     $bindDNs = [
@@ -57,46 +62,57 @@ function authenticateWithAD(string $username, string $password): ?array
     $authenticated = false;
     $userDN = null;
     
-    // Try to bind with each format
+    // Try to bind with each format (with timeout handling)
     foreach ($bindDNs as $bindDN) {
-        $bind = @ldap_bind($ldap, $bindDN, $password);
-        if ($bind) {
-            $authenticated = true;
-            $userDN = $bindDN;
-            break;
+        try {
+            $bind = @ldap_bind($ldap, $bindDN, $password);
+            if ($bind) {
+                $authenticated = true;
+                $userDN = $bindDN;
+                break;
+            }
+        } catch (Exception $e) {
+            error_log("LDAP bind error: " . $e->getMessage());
+            continue;
         }
     }
     
     if (!$authenticated) {
-        ldap_close($ldap);
+        @ldap_close($ldap);
         return null;
     }
     
-    // Search for user in AD
+    // Search for user in AD (with timeout handling)
     $searchFilter = "(|(sAMAccountName={$username})(userPrincipalName={$username}@{$adDomain})(mail={$username}))";
     if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
         $emailParts = explode('@', $username);
         $searchFilter = "(|(sAMAccountName={$emailParts[0]})(userPrincipalName={$username})(mail={$username}))";
     }
     
-    $search = @ldap_search($ldap, $adBaseDN, $searchFilter, [
-        'sAMAccountName',
-        'mail',
-        'displayName',
-        'givenName',
-        'sn',
-        'memberOf',
-        'userPrincipalName',
-        'distinguishedName'
-    ]);
-    
-    if (!$search) {
-        ldap_close($ldap);
+    try {
+        $search = @ldap_search($ldap, $adBaseDN, $searchFilter, [
+            'sAMAccountName',
+            'mail',
+            'displayName',
+            'givenName',
+            'sn',
+            'memberOf',
+            'userPrincipalName',
+            'distinguishedName'
+        ], 0, 1, 10); // Size limit: 1, time limit: 10 seconds
+        
+        if (!$search) {
+            @ldap_close($ldap);
+            return null;
+        }
+        
+        $entries = @ldap_get_entries($ldap, $search);
+        @ldap_close($ldap);
+    } catch (Exception $e) {
+        error_log("LDAP search error: " . $e->getMessage());
+        @ldap_close($ldap);
         return null;
     }
-    
-    $entries = @ldap_get_entries($ldap, $search);
-    ldap_close($ldap);
     
     if (!$entries || $entries['count'] === 0) {
         return null;
