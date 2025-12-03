@@ -26,3 +26,14 @@
 # OS-specific
 Thumbs.db
 
+# Temporary files and scripts
+temp_*.sh
+temp_*.ps1
+fix_*.ps1
+check_*.ps1
+start_*.ps1
+install_*.ps1
+enable_*.ps1
+copy_*.ps1
+*.backup
+*.bak

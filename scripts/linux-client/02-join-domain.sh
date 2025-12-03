@@ -108,3 +108,4 @@ echo "  2. Log in as: MORNINGSTAR\\teacher1"
 echo "  3. Run 03-mount-shares.sh to mount network drives"
 echo ""
 
+

@@ -22,3 +22,4 @@ post_max_size = 10M
 display_errors = Off
 error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
 
+

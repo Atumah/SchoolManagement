@@ -26,3 +26,4 @@ LoadModule php_module "C:/PHP/php8apache2_4.dll"
 PHPIniDir "C:/PHP"
 AddType application/x-httpd-php .php
 
+

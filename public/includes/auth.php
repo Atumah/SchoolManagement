@@ -133,18 +133,38 @@ function hasAnyRole(array $roles): bool
 
 /**
  * Login user with security checks
+ * Tries AD authentication first, falls back to database authentication
  */
 function login(string $email, string $password): bool
 {
     require_once __DIR__ . '/data.php';
-
-    // Validate email format
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        return false;
-    }
+    require_once __DIR__ . '/ad_auth.php';
 
     // Validate password is not empty
     if (empty($password)) {
+        return false;
+    }
+
+    // Try AD authentication first
+    $adUserData = authenticateWithAD($email, $password);
+    
+    if ($adUserData !== null) {
+        // AD authentication successful - sync user to database
+        $userId = syncADUserToDatabase($adUserData);
+        
+        if ($userId) {
+            $user = getUserById($userId);
+            if ($user && $user['status'] === 'Active') {
+                // Complete login process
+                return completeLogin($user);
+            }
+        }
+        return false;
+    }
+    
+    // Fall back to database authentication
+    // Validate email format for database lookup
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
@@ -153,8 +173,14 @@ function login(string $email, string $password): bool
         return false;
     }
 
-    // Verify password using bcrypt
-    if (!password_verify($password, $user['password'])) {
+    // Skip password check if user has NULL password (AD-only user)
+    if ($user['password'] !== null) {
+        // Verify password using bcrypt
+        if (!password_verify($password, $user['password'])) {
+            return false;
+        }
+    } else {
+        // User has NULL password but AD auth failed - deny access
         return false;
     }
 
@@ -162,6 +188,15 @@ function login(string $email, string $password): bool
     if ($user['status'] !== 'Active') {
         return false;
     }
+    
+    return completeLogin($user);
+}
+
+/**
+ * Complete login process (shared by AD and database auth)
+ */
+function completeLogin(array $user): bool
+{
 
     // Check if 2FA is enabled
     $twofaEnabled = isset($user['twofa_enabled']) && ($user['twofa_enabled'] === true || $user['twofa_enabled'] === 1);

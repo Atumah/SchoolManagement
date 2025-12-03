@@ -113,3 +113,4 @@ echo "Network settings:"
 ip addr show "$INTERFACE" | grep "inet "
 echo ""
 
+

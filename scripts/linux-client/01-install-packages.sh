@@ -40,3 +40,4 @@ echo ""
 echo "Next step: Run 02-join-domain.sh"
 echo ""
 
+
