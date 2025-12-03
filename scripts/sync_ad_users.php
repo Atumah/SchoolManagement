@@ -48,18 +48,33 @@ ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
 // Bind as administrator (or use service account)
 // For initial sync, you may need admin credentials
 echo "Binding to AD...\n";
-$bindDN = "CN=Administrator,CN=Users,{$adBaseDN}";
 $bindPassword = getenv('AD_ADMIN_PASSWORD') ?: 'Morningstar1'; // Use environment variable or default
 
-$bind = @ldap_bind($ldap, $bindDN, $bindPassword);
-if (!$bind) {
-    // Try alternative bind methods
-    $bind = @ldap_bind($ldap, "Administrator@{$adDomain}", $bindPassword);
-    if (!$bind) {
-        echo "ERROR: Failed to bind to AD. Check credentials.\n";
-        ldap_close($ldap);
-        exit(1);
+// Try multiple bind formats
+$bindMethods = [
+    "Administrator@{$adDomain}",                    // UPN format
+    "{$adDomain}\\Administrator",                   // Domain\username format
+    "CN=Administrator,CN=Users,{$adBaseDN}",        // Distinguished name
+];
+
+$bind = false;
+foreach ($bindMethods as $bindDN) {
+    $bind = @ldap_bind($ldap, $bindDN, $bindPassword);
+    if ($bind) {
+        echo "Bound successfully using: $bindDN\n";
+        break;
     }
+}
+
+if (!$bind) {
+    echo "ERROR: Failed to bind to AD with any method.\n";
+    echo "Tried: " . implode(", ", $bindMethods) . "\n";
+    echo "Please check:\n";
+    echo "1. Administrator password is correct\n";
+    echo "2. AD server is accessible\n";
+    echo "3. LDAP ports are open (Step 2.11)\n";
+    ldap_close($ldap);
+    exit(1);
 }
 
 echo "Connected successfully!\n\n";
