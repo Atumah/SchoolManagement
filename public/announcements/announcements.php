@@ -1,25 +1,11 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../includes/auth.php';
-// REMOVE: require_once __DIR__ . '/../includes/data.php';  // This is missing getPDO()
 
-// ADD THIS PDO CONNECTION (replace all getPDO() calls)
 function getDBConnection(): PDO {
-    static $pdo = null;
-    if ($pdo === null) {
-        $pdo = new PDO(
-                'mysql:host=mariadb;port=3306;dbname=app;charset=utf8mb4',
-                'app',
-                'secret',
-                [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false
-                ]
-        );
-    }
-    return $pdo;
+    return \App\Database\Database::connection();
 }
 
 
