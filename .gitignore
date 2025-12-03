@@ -35,5 +35,6 @@ start_*.ps1
 install_*.ps1
 enable_*.ps1
 copy_*.ps1
+deploy_*.ps1
 *.backup
 *.bak
